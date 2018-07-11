@@ -1,0 +1,22 @@
+Package: classCleaner
+Type: Package
+Title: Tools to Identify Outliers in grouped (class) Data
+Version: 0.1.0
+Authors@R: c(
+  person("Melissa","Key",email="melkey@iu.edu",role= c("aut","cre")),
+  person("Benzoin","Boukai",email = "bboukai@iu.edu>",role = "aut"))
+Description: Nonparametric methods for filtering outliers.
+    Outliers are defined with respect to their class (group) assignment,
+    so an "outlier" is different from other members of the same class,
+    but not necessarily other instances from other classes.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: TRUE
+Imports: 
+    Rcpp (>= 0.9.4),
+    RcppProgress (>= 0.1)
+LinkingTo:
+    Rcpp,
+    RcppArmadillo,
+    RcppProgress
+RoxygenNote: 6.0.1
