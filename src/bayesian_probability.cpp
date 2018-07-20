@@ -4,50 +4,71 @@
 
 using namespace Rcpp;
 
-double generate_mean(int N, int N1, int i, const IntegerVector& sim_vector, const NumericMatrix& D, const IntegerVector& k_indices, bool bypass) {
+double generate_mean(int N, int i, const IntegerVector& sim_vector, const NumericMatrix& D, const IntegerVector& k_indices, bool bypass) {
 
+  
+  int N1 = k_indices.size();
   IntegerVector sampling_vec(sim_vector.size() + N1);
   const IntegerVector::iterator draws_start = sampling_vec.begin() + sim_vector.size();
   IntegerVector::iterator current_draw = sampling_vec.begin();
   IntegerVector::const_iterator sim_itr = sim_vector.begin();
 
+  IntegerVector indices(2);
+  NumericVector x(N1);
+  
+  
+    
   // Initialize sampling vec with current data
   for(; current_draw != draws_start; ++current_draw, ++sim_itr){
-    *current_draw = *sim_itr;
+    *current_draw = N * i + *sim_itr;
   }
 
   // Now draw the samples
   for(; current_draw != sampling_vec.end(); ++current_draw){
-    // Rcout << sampling_vec << "\n";
     if(bypass) {
-      *current_draw = sample_Fi(N, i, k_indices);
+      IntegerVector all_indices = seq_len(N) - 1;
+      IntegerVector row_indices = setdiff(all_indices, k_indices);
+      IntegerVector j = sample(row_indices, 1);
+      
+      *current_draw = sample_Fk(N, i, k_indices, j.begin(), j.end());
     }
     else {
       *current_draw = -1;
-      *current_draw = sample_Fik(N, i, sampling_vec.begin(), current_draw, k_indices);
+      // Rcout << "sampling vec: " << sampling_vec << "\n";
+      
+      *current_draw = sample_Fik(N, i, k_indices, sampling_vec.begin(), current_draw + 1);
     }
+    // Rcout << x << "\n";
+    // 
   }
-  // Rcout << sampling_vec << "\n";
+  // Rcout << "          sampling vec: " << sampling_vec << "\n";
 
-  IntegerVector indices(2);
-  current_draw = draws_start;
-  for(int j = 0; j < N1; j++, ++current_draw){
+  NumericVector::iterator x_itr = x.begin();
+  for(current_draw = draws_start; current_draw != sampling_vec.end(); ++current_draw, ++x_itr) {
     indices(0) = *current_draw % N;
     indices(1) = *current_draw / N;
-    *current_draw = k_indices[indices(1)] * N + indices(0);
+        
+    // Rcout << "row: " << indices(0) << " column: " << k_indices(indices(1)) << " entry: " << D(indices(0), k_indices(indices(1))) << "\n"; 
+    
+    *x_itr = D(indices(0), k_indices(indices(1)));
+    // Rcout << "x: " << x << "\n"; 
   }
-  // Rcout << sampling_vec << "\n";
+  // Rcout << "\n";
+  // Rcout << "corrected sampling vec: " << sampling_vec << "\n\n";
 
-  NumericVector x(N1);
-  NumericVector::iterator x_itr = x.begin();
-  for(current_draw = draws_start; current_draw !=  sampling_vec.end(); ++current_draw, ++x_itr){
-    *x_itr = D[*current_draw];
-  }
   // Rcout << x << "\n";
   return mean(x);
 
   // Rcout << sampling_vec << "\n";
 }
+
+/***R
+
+tmp <- replicate(10, generate_mean(10, 2, c(3, 4, 5), matrix(0:99, nrow = 10, ncol= 10), c(0, 5, 6), FALSE))
+
+# bayesian_prob(rep(LETTERS[1:3], c(3, 3, 4)), matrix(0:99, nrow = 10, ncol = 10), "A", 10)
+  
+*/
 
 NumericVector sample_means(const CharacterVector& P_ks, std::string k, int i, const CharacterVector& assignment, const IntegerVector& k_indices, const NumericMatrix& D) {
 
@@ -55,7 +76,6 @@ NumericVector sample_means(const CharacterVector& P_ks, std::string k, int i, co
   bool bypass;
 
   int N = assignment.size();
-  int N1 = k_indices.size();
 
   CharacterVector::const_iterator Pk_itr = P_ks.begin();
   IntegerVector sim_indices;
@@ -65,12 +85,25 @@ NumericVector sample_means(const CharacterVector& P_ks, std::string k, int i, co
 
   for(; Pk_itr != P_ks.end(); ++Pk_itr, ++means_itr) {
     sim_indices = find_string_locs(assignment, as<std::string>(*Pk_itr));
+    if(sim_indices.size() == 0) return 0;
+    
+    // Rcout << "sample_means: P_k = " << *Pk_itr << "\n";
+    // Rcout << "sample_means: indices = " << sim_indices << "\n";
     bypass = as<std::string>(*Pk_itr) == k;
-    *means_itr = generate_mean(N, N1, i, sim_indices, D, k_indices, bypass);
+    *means_itr = generate_mean(N, i, sim_indices, D, k_indices, bypass);
   }
 
   return output;
 }
+
+/***R
+
+tmp <- replicate(10, sample_means(sample(LETTERS[1:3], 100, TRUE), "A", 0, rep(LETTERS[1:3], c(3, 3, 4)), 0:2, matrix(0:99, nrow = 10, ncol = 10) ))
+
+# bayesian_prob(rep(LETTERS[1:3], c(3, 3, 4)), matrix(0:99, nrow = 10, ncol = 10), "A", 10)
+
+*/
+
 
 //' Bayesian Filtering Probablity
 //' Calculate the probability of P(i in Group k | data) for all entities in Group k using simulated draws from a hierarchical Dirichlet sampling scheme.
@@ -106,6 +139,7 @@ NumericVector bayesian_prob(const CharacterVector& assignment, const NumericMatr
 
   IntegerVector k_indices = find_string_locs(assignment, k);
   int N1 = k_indices.size();
+
   NumericVector muk(N1);
 
   // count number of entities per group
@@ -115,15 +149,17 @@ NumericVector bayesian_prob(const CharacterVector& assignment, const NumericMatr
   int index = groups_table.findName(k);
   groups_table(index) = 1;
   // all_groups(index) = "-1";
-  groups_table.names() = all_groups;
+  // groups_table.names() = all_groups;
 
   NumericVector groups_num = as<NumericVector>(groups_table);
-
+  // Rcout << "groups_table = " << groups_num << "\n";
+  
   IntegerVector::iterator mu_itr = k_indices.begin();
   NumericVector mean_vec(B);
   NumericVector probs(N1);
 
   for(int i = 0; i < N1; ++i) {
+    // Rcout << "Calculating mean " << i << "\n";
     // calculate observed mean
     muk(i) = 0;
     mu_itr = k_indices.begin();
@@ -132,16 +168,26 @@ NumericVector bayesian_prob(const CharacterVector& assignment, const NumericMatr
     }
     muk(i) = muk(i)/ (N1 - 1);
 
+    // Rcout << "mu_k = " << muk << "\n";
+    
     // draw k's to sample from:
     CharacterVector k_rep = sample(all_groups, B, true, groups_num);
+    // Rcout << "k_rep = " << k_rep << "\n";
     mean_vec = sample_means(k_rep, k, i, assignment, k_indices, D);
+    
+    // Rcout << "mean_vec = " << mean_vec << "\n";
 
     for(NumericVector::iterator bi = mean_vec.begin(); bi < mean_vec.end(); ++bi){
       probs(i) += *bi < muk(i);
     }
+    
+    
     probs(i) = probs(i) / B;
+    // Rcout << "probs = " << probs << "\n";
   }
 
 
   return probs; // DataFrame::create(_["k_ind"] = k_indices, _["i"] = seq_len(N1), _["mu"] = muk, _["probs"] = probs);
 }
+
+

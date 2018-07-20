@@ -28,5 +28,5 @@
 #' 
 #' @useDynLib classCleaner, .registration = TRUE
 #' @importFrom Rcpp sourceCpp
-#' @improt RcppProgress
+#' @import RcppProgress
 NULL
