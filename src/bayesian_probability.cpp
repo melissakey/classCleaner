@@ -24,7 +24,7 @@ double generate_mean(int N, int N1, int i, const IntegerVector& sim_vector, cons
     }
     else {
       *current_draw = -1;
-      *current_draw = sample_Fik(N, i, sampling_vec.begin(), current_draw, k_indices);
+      *current_draw = sample_Fik(N, i, sampling_vec.begin(), current_draw + 1, k_indices);
     }
   }
   // Rcout << sampling_vec << "\n";
