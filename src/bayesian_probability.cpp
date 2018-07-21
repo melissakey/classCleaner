@@ -34,41 +34,21 @@ double generate_mean(int N, int i, const IntegerVector& sim_vector, const Numeri
     }
     else {
       *current_draw = -1;
-      // Rcout << "sampling vec: " << sampling_vec << "\n";
-      
+
       *current_draw = sample_Fik(N, i, k_indices, sampling_vec.begin(), current_draw + 1);
     }
-    // Rcout << x << "\n";
-    // 
   }
-  // Rcout << "          sampling vec: " << sampling_vec << "\n";
 
   NumericVector::iterator x_itr = x.begin();
   for(current_draw = draws_start; current_draw != sampling_vec.end(); ++current_draw, ++x_itr) {
     indices(0) = *current_draw % N;
     indices(1) = *current_draw / N;
         
-    // Rcout << "row: " << indices(0) << " column: " << k_indices(indices(1)) << " entry: " << D(indices(0), k_indices(indices(1))) << "\n"; 
-    
     *x_itr = D(indices(0), k_indices(indices(1)));
-    // Rcout << "x: " << x << "\n"; 
   }
-  // Rcout << "\n";
-  // Rcout << "corrected sampling vec: " << sampling_vec << "\n\n";
 
-  // Rcout << x << "\n";
   return mean(x);
-
-  // Rcout << sampling_vec << "\n";
 }
-
-/***R
-
-tmp <- replicate(10, generate_mean(10, 2, c(3, 4, 5), matrix(0:99, nrow = 10, ncol= 10), c(0, 5, 6), FALSE))
-
-# bayesian_prob(rep(LETTERS[1:3], c(3, 3, 4)), matrix(0:99, nrow = 10, ncol = 10), "A", 10)
-  
-*/
 
 NumericVector sample_means(const CharacterVector& P_ks, std::string k, int i, const CharacterVector& assignment, const IntegerVector& k_indices, const NumericMatrix& D) {
 
@@ -87,23 +67,12 @@ NumericVector sample_means(const CharacterVector& P_ks, std::string k, int i, co
     sim_indices = find_string_locs(assignment, as<std::string>(*Pk_itr));
     if(sim_indices.size() == 0) return 0;
     
-    // Rcout << "sample_means: P_k = " << *Pk_itr << "\n";
-    // Rcout << "sample_means: indices = " << sim_indices << "\n";
     bypass = as<std::string>(*Pk_itr) == k;
     *means_itr = generate_mean(N, i, sim_indices, D, k_indices, bypass);
   }
 
   return output;
 }
-
-/***R
-
-tmp <- replicate(10, sample_means(sample(LETTERS[1:3], 100, TRUE), "A", 0, rep(LETTERS[1:3], c(3, 3, 4)), 0:2, matrix(0:99, nrow = 10, ncol = 10) ))
-
-# bayesian_prob(rep(LETTERS[1:3], c(3, 3, 4)), matrix(0:99, nrow = 10, ncol = 10), "A", 10)
-
-*/
-
 
 //' Bayesian Filtering Probablity
 //' Calculate the probability of P(i in Group k | data) for all entities in Group k using simulated draws from a hierarchical Dirichlet sampling scheme.
@@ -152,14 +121,12 @@ NumericVector bayesian_prob(const CharacterVector& assignment, const NumericMatr
   // groups_table.names() = all_groups;
 
   NumericVector groups_num = as<NumericVector>(groups_table);
-  // Rcout << "groups_table = " << groups_num << "\n";
   
   IntegerVector::iterator mu_itr = k_indices.begin();
   NumericVector mean_vec(B);
   NumericVector probs(N1);
 
   for(int i = 0; i < N1; ++i) {
-    // Rcout << "Calculating mean " << i << "\n";
     // calculate observed mean
     muk(i) = 0;
     mu_itr = k_indices.begin();
@@ -168,22 +135,16 @@ NumericVector bayesian_prob(const CharacterVector& assignment, const NumericMatr
     }
     muk(i) = muk(i)/ (N1 - 1);
 
-    // Rcout << "mu_k = " << muk << "\n";
-    
     // draw k's to sample from:
     CharacterVector k_rep = sample(all_groups, B, true, groups_num);
-    // Rcout << "k_rep = " << k_rep << "\n";
     mean_vec = sample_means(k_rep, k, i, assignment, k_indices, D);
     
-    // Rcout << "mean_vec = " << mean_vec << "\n";
-
     for(NumericVector::iterator bi = mean_vec.begin(); bi < mean_vec.end(); ++bi){
       probs(i) += *bi < muk(i);
     }
     
     
     probs(i) = probs(i) / B;
-    // Rcout << "probs = " << probs << "\n";
   }
 
 
