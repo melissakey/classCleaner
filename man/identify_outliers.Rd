@@ -4,7 +4,7 @@
 \alias{identify_outliers}
 \title{Identify Outliers}
 \usage{
-identify_outliers(assignment, D, B, min_group_size, labels,
+identify_outliers(assignment, D, B, min_group_size, prior, labels,
   display_progress = FALSE)
 }
 \arguments{

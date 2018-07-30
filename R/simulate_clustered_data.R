@@ -48,10 +48,13 @@ simulate_clustered_data <- function(
     X <- sim_by_instance(n, Nk, s, rho)
   }
   else{
-    if (length(Nk) != nrow(rho) & nrow(rho) > 1){
-      stop("Nk must have the same length as ncol(rho)/nrow(rho) or rho must be of length 1.")
-    }
-    X <- sim_by_class(n, Nk, s, tau, as.matrix(rho))
+    if (length(Nk) == nrow(rho)){
+      X <- sim_by_class(n, Nk[Nk > 0], s[Nk > 0], tau, rho[Nk > 0, Nk > 0])
+    } else if (nrow(rho) == 1) {
+      X <- sim_by_class(n, Nk[Nk > 0], s[Nk > 0], tau, as.matrix(rho))
+    } else       stop("Nk must have the same length as ncol(rho)/nrow(rho) or rho must be of length 1.")
+
+    
   }
 
   # add identifiers

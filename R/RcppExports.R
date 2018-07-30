@@ -30,8 +30,8 @@
 #' hist(means)
 NULL
 
-bayesian_prob <- function(assignment, D, k, B) {
-    .Call(`_classCleaner_bayesian_prob`, assignment, D, k, B)
+bayesian_prob <- function(assignment, D, k, B, prior) {
+    .Call(`_classCleaner_bayesian_prob`, assignment, D, k, B, prior)
 }
 
 empirical_prob <- function(assignment, D, k) {
@@ -53,8 +53,8 @@ empirical_prob <- function(assignment, D, k) {
 #' Under the alterantive hypothesis, the mean distance is closer, and we conclude that the entity truly belongs to the group.
 #'
 #' @export
-identify_outliers <- function(assignment, D, B, min_group_size, labels, display_progress = FALSE) {
-    .Call(`_classCleaner_identify_outliers`, assignment, D, B, min_group_size, labels, display_progress)
+identify_outliers <- function(assignment, D, B, min_group_size, prior, labels, display_progress = FALSE) {
+    .Call(`_classCleaner_identify_outliers`, assignment, D, B, min_group_size, prior, labels, display_progress)
 }
 
 #' @title test function

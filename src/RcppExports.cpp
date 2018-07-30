@@ -7,8 +7,8 @@
 using namespace Rcpp;
 
 // bayesian_prob
-NumericVector bayesian_prob(const CharacterVector& assignment, const NumericMatrix& D, std::string k, int B);
-RcppExport SEXP _classCleaner_bayesian_prob(SEXP assignmentSEXP, SEXP DSEXP, SEXP kSEXP, SEXP BSEXP) {
+NumericVector bayesian_prob(const CharacterVector& assignment, const NumericMatrix& D, std::string k, int B, std::string prior);
+RcppExport SEXP _classCleaner_bayesian_prob(SEXP assignmentSEXP, SEXP DSEXP, SEXP kSEXP, SEXP BSEXP, SEXP priorSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -16,7 +16,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const NumericMatrix& >::type D(DSEXP);
     Rcpp::traits::input_parameter< std::string >::type k(kSEXP);
     Rcpp::traits::input_parameter< int >::type B(BSEXP);
-    rcpp_result_gen = Rcpp::wrap(bayesian_prob(assignment, D, k, B));
+    Rcpp::traits::input_parameter< std::string >::type prior(priorSEXP);
+    rcpp_result_gen = Rcpp::wrap(bayesian_prob(assignment, D, k, B, prior));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -34,8 +35,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // identify_outliers
-DataFrame identify_outliers(const CharacterVector& assignment, const NumericMatrix& D, int B, int min_group_size, const CharacterVector& labels, bool display_progress);
-RcppExport SEXP _classCleaner_identify_outliers(SEXP assignmentSEXP, SEXP DSEXP, SEXP BSEXP, SEXP min_group_sizeSEXP, SEXP labelsSEXP, SEXP display_progressSEXP) {
+DataFrame identify_outliers(const CharacterVector& assignment, const NumericMatrix& D, int B, int min_group_size, std::string prior, const CharacterVector& labels, bool display_progress);
+RcppExport SEXP _classCleaner_identify_outliers(SEXP assignmentSEXP, SEXP DSEXP, SEXP BSEXP, SEXP min_group_sizeSEXP, SEXP priorSEXP, SEXP labelsSEXP, SEXP display_progressSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -43,9 +44,10 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const NumericMatrix& >::type D(DSEXP);
     Rcpp::traits::input_parameter< int >::type B(BSEXP);
     Rcpp::traits::input_parameter< int >::type min_group_size(min_group_sizeSEXP);
+    Rcpp::traits::input_parameter< std::string >::type prior(priorSEXP);
     Rcpp::traits::input_parameter< const CharacterVector& >::type labels(labelsSEXP);
     Rcpp::traits::input_parameter< bool >::type display_progress(display_progressSEXP);
-    rcpp_result_gen = Rcpp::wrap(identify_outliers(assignment, D, B, min_group_size, labels, display_progress));
+    rcpp_result_gen = Rcpp::wrap(identify_outliers(assignment, D, B, min_group_size, prior, labels, display_progress));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -91,9 +93,9 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_classCleaner_bayesian_prob", (DL_FUNC) &_classCleaner_bayesian_prob, 4},
+    {"_classCleaner_bayesian_prob", (DL_FUNC) &_classCleaner_bayesian_prob, 5},
     {"_classCleaner_empirical_prob", (DL_FUNC) &_classCleaner_empirical_prob, 3},
-    {"_classCleaner_identify_outliers", (DL_FUNC) &_classCleaner_identify_outliers, 6},
+    {"_classCleaner_identify_outliers", (DL_FUNC) &_classCleaner_identify_outliers, 7},
     {"_classCleaner_test", (DL_FUNC) &_classCleaner_test, 1},
     {"_classCleaner_sim_by_class", (DL_FUNC) &_classCleaner_sim_by_class, 5},
     {"_classCleaner_sim_by_instance", (DL_FUNC) &_classCleaner_sim_by_instance, 4},

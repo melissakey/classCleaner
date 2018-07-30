@@ -17,6 +17,7 @@ arma::mat sim_by_class( arma::uword n, const arma::uvec&  Nk, const arma::colvec
   if(rho.n_elem == 1){
     V.fill(arma::as_scalar(rho));
     V.diag().ones();
+    
   }
   else {
     V = rho;
@@ -26,6 +27,7 @@ arma::mat sim_by_class( arma::uword n, const arma::uvec&  Nk, const arma::colvec
 
   arma::vec mu0(K, arma::fill::zeros);
   arma::mat W = mvrnorm(n,mu0, V);
+
 
   arma::mat X = arma::randn<arma::mat>(n, N) * tau;
 
