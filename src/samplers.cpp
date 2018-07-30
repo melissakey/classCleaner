@@ -25,7 +25,7 @@ int sample_F0(int N, int i, const IntegerVector::const_iterator& row_indices_sta
   // Rcout << "F0, sampling from: " << indices << "\n";
   return sample(indices, 1, true)(0);
 }
-int  sample_Fk(int N, int i, const IntegerVector& k_indices, const IntegerVector::iterator& sim_vector_start, const IntegerVector::iterator& sim_vector_end) {
+int sample_Fk(int N, int i, const IntegerVector& k_indices, const IntegerVector::iterator& sim_vector_start, const IntegerVector::iterator& sim_vector_end) {
   // Rcout << "Drawing from Fk\n";
   IntegerVector sim_vector(sim_vector_start, sim_vector_end);
   
@@ -74,11 +74,15 @@ int sample_Fi(int N, int i, const IntegerVector& k_indices) {
   else out = out + N * i;
   return out;
 }
-int sample_Fik(int N, int i, const IntegerVector& k_indices, const IntegerVector::iterator& sim_vector_start, const IntegerVector::iterator& sim_vector_end) {
+int sample_Fik(int N, int i, const IntegerVector& k_indices, const IntegerVector::iterator& sim_vector_start, const IntegerVector::iterator& sim_vector_end, std::string prior) {
   IntegerVector sim_vector(sim_vector_start, sim_vector_end);
   // Rcout << "Fik, sampling from: " << sim_vector << "\n";
   int out = sample(sim_vector, 1, true)(0);
-  if(out < 0) out = sample_Fk(N, i, k_indices, sim_vector_start, sim_vector_end - 1);
+  if(out < 0) {
+    if (prior.compare("Fk")) out = sample_Fk(N, i, k_indices, sim_vector_start, sim_vector_end - 1);
+    else if (prior.compare("Fi")) out = sample_Fi(N, i, k_indices);
+    else stop("invalid prior distribution for Fik");
+  }
   // else out = out + N * i;
   return out;
 }
