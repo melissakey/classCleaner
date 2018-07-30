@@ -24,7 +24,7 @@ using namespace Rcpp;
 //'
 //' @export
 // [[Rcpp::export]]
-DataFrame identify_outliers(const CharacterVector& assignment, const NumericMatrix& D, int B, int min_group_size, const CharacterVector& labels, bool display_progress = false) {
+DataFrame identify_outliers(const CharacterVector& assignment, const NumericMatrix& D, int B, int min_group_size, std::string prior, const CharacterVector& labels, bool display_progress = false) {
   // int N = assignment.size();
 
   IntegerVector protein_table = table(assignment);
@@ -55,7 +55,7 @@ DataFrame identify_outliers(const CharacterVector& assignment, const NumericMatr
     p.increment();
     
     IntegerVector peptides = find_string_locs(assignment, as<std::string>(*prot)); IntegerVector::iterator peptide_i = peptides.begin();
-    NumericVector pep_probs = bayesian_prob(assignment, D, as<std::string>(*prot), B);
+    NumericVector pep_probs = bayesian_prob(assignment, D, as<std::string>(*prot), B, prior);
     NumericVector pep_probs2 = empirical_prob(assignment, D, as<std::string>(*prot));
     NumericVector::iterator vec_prob_i = pep_probs.begin();
     NumericVector::iterator vec_prob2_i = pep_probs2.begin();

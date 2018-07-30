@@ -4,7 +4,7 @@
 
 using namespace Rcpp;
 
-double generate_mean(int N, int i, const IntegerVector& sim_vector, const NumericMatrix& D, const IntegerVector& k_indices, bool bypass) {
+double generate_mean(int N, int i, const IntegerVector& sim_vector, const NumericMatrix& D, const IntegerVector& k_indices, bool bypass, std::string prior) {
 
   
   int N1 = k_indices.size();
@@ -30,12 +30,12 @@ double generate_mean(int N, int i, const IntegerVector& sim_vector, const Numeri
       IntegerVector row_indices = setdiff(all_indices, k_indices);
       IntegerVector j = sample(row_indices, 1);
       
-      *current_draw = sample_Fk(N, i, k_indices, j.begin(), j.end());
+      if(prior.compare("Fk")) *current_draw = sample_Fk(N, i, k_indices, j.begin(), j.end());
+      else *current_draw = sample_Fi(N, i, k_indices);
     }
     else {
       *current_draw = -1;
-
-      *current_draw = sample_Fik(N, i, k_indices, sampling_vec.begin(), current_draw + 1);
+      *current_draw = sample_Fik(N, i, k_indices, sampling_vec.begin(), current_draw + 1, prior = prior);
     }
   }
 
@@ -50,7 +50,7 @@ double generate_mean(int N, int i, const IntegerVector& sim_vector, const Numeri
   return mean(x);
 }
 
-NumericVector sample_means(const CharacterVector& P_ks, std::string k, int i, const CharacterVector& assignment, const IntegerVector& k_indices, const NumericMatrix& D) {
+NumericVector sample_means(const CharacterVector& P_ks, std::string k, int i, const CharacterVector& assignment, const IntegerVector& k_indices, const NumericMatrix& D, std::string prior) {
 
   NumericVector output(P_ks.size());
   bool bypass;
@@ -68,7 +68,7 @@ NumericVector sample_means(const CharacterVector& P_ks, std::string k, int i, co
     if(sim_indices.size() == 0) return 0;
     
     bypass = as<std::string>(*Pk_itr) == k;
-    *means_itr = generate_mean(N, i, sim_indices, D, k_indices, bypass);
+    *means_itr = generate_mean(N, i, sim_indices, D, k_indices, bypass, prior);
   }
 
   return output;
@@ -104,7 +104,7 @@ NumericVector sample_means(const CharacterVector& P_ks, std::string k, int i, co
 
 
 // [[Rcpp::export]]
-NumericVector bayesian_prob(const CharacterVector& assignment, const NumericMatrix& D, std::string k, int B) {
+NumericVector bayesian_prob(const CharacterVector& assignment, const NumericMatrix& D, std::string k, int B, std::string prior) {
 
   IntegerVector k_indices = find_string_locs(assignment, k);
   int N1 = k_indices.size();
@@ -137,7 +137,7 @@ NumericVector bayesian_prob(const CharacterVector& assignment, const NumericMatr
 
     // draw k's to sample from:
     CharacterVector k_rep = sample(all_groups, B, true, groups_num);
-    mean_vec = sample_means(k_rep, k, i, assignment, k_indices, D);
+    mean_vec = sample_means(k_rep, k, i, assignment, k_indices, D, prior);
     
     for(NumericVector::iterator bi = mean_vec.begin(); bi < mean_vec.end(); ++bi){
       probs(i) += *bi < muk(i);
