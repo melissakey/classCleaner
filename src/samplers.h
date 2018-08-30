@@ -3,10 +3,9 @@
 
 #include <Rcpp.h>
 
-int sample_F0(int N, int i, const Rcpp::IntegerVector::iterator& row_indices_start, const Rcpp::IntegerVector::iterator& row_indices_end);
-int sample_Fk(int N, int i, const Rcpp::IntegerVector& k_indices, const Rcpp::IntegerVector::iterator& sim_vector_start, const Rcpp::IntegerVector::iterator& sim_vector_end);
-int sample_Fi(int N, int i, const Rcpp::IntegerVector& k_indices);
-int sample_Fik(int N, int i, const Rcpp::IntegerVector& k_indices, const Rcpp::IntegerVector::iterator& sim_vector_start, const Rcpp::IntegerVector::iterator& sim_vector_end, std::string prior);
-// int sample_Fik_wrapper(int N, int i, Rcpp::IntegerVector& k_indices, Rcpp::IntegerVector sim_vector);
+Rcpp::IntegerMatrix sample_F0(int n, int Nk, const Rcpp::IntegerVector& o_indices);
+Rcpp::IntegerVector sample_Fk(int N, int n, int i, double omega0, const Rcpp::IntegerVector& k_indices, const Rcpp::IntegerVector& s_indices);
+Rcpp::IntegerVector sample_Fi(int N, int K, int n, int i, double omega0, const Rcpp::IntegerVector& k_indices);
+Rcpp::IntegerVector sample_Fik(int N, int K, int i, double omega, double omega0, const Rcpp::IntegerVector& k_indices, const Rcpp::IntegerVector& s_indices, std::string prior);
 
 # endif

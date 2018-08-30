@@ -5,7 +5,7 @@
 \title{Identify Outliers}
 \usage{
 identify_outliers(assignment, D, B, min_group_size, prior, labels,
-  display_progress = FALSE)
+  display_progress = FALSE, omega = 1, omega0 = 1)
 }
 \arguments{
 \item{assignment}{A character vector containing the group to which each entity has been classified}

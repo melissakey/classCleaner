@@ -1,78 +1,9 @@
 #include <Rcpp.h>
 #include "misc.h"
-#include "samplers.h"
+#include "get_observed_means.h"
+#include "get_estimated_prob.h"
 
 using namespace Rcpp;
-
-double generate_mean(int N, int i, const IntegerVector& sim_vector, const NumericMatrix& D, const IntegerVector& k_indices, bool bypass, std::string prior) {
-
-  
-  int N1 = k_indices.size();
-  IntegerVector sampling_vec(sim_vector.size() + N1);
-  const IntegerVector::iterator draws_start = sampling_vec.begin() + sim_vector.size();
-  IntegerVector::iterator current_draw = sampling_vec.begin();
-  IntegerVector::const_iterator sim_itr = sim_vector.begin();
-
-  IntegerVector indices(2);
-  NumericVector x(N1);
-  
-  
-    
-  // Initialize sampling vec with current data
-  for(; current_draw != draws_start; ++current_draw, ++sim_itr){
-    *current_draw = N * i + *sim_itr;
-  }
-
-  // Now draw the samples
-  for(; current_draw != sampling_vec.end(); ++current_draw){
-    if(bypass) {
-      IntegerVector all_indices = seq_len(N) - 1;
-      IntegerVector row_indices = setdiff(all_indices, k_indices);
-      IntegerVector j = sample(row_indices, 1);
-      
-      if(prior.compare("Fk")) *current_draw = sample_Fk(N, i, k_indices, j.begin(), j.end());
-      else *current_draw = sample_Fi(N, i, k_indices);
-    }
-    else {
-      *current_draw = -1;
-      *current_draw = sample_Fik(N, i, k_indices, sampling_vec.begin(), current_draw + 1, prior = prior);
-    }
-  }
-
-  NumericVector::iterator x_itr = x.begin();
-  for(current_draw = draws_start; current_draw != sampling_vec.end(); ++current_draw, ++x_itr) {
-    indices(0) = *current_draw % N;
-    indices(1) = *current_draw / N;
-        
-    *x_itr = D(indices(0), k_indices(indices(1)));
-  }
-
-  return mean(x);
-}
-
-NumericVector sample_means(const CharacterVector& P_ks, std::string k, int i, const CharacterVector& assignment, const IntegerVector& k_indices, const NumericMatrix& D, std::string prior) {
-
-  NumericVector output(P_ks.size());
-  bool bypass;
-
-  int N = assignment.size();
-
-  CharacterVector::const_iterator Pk_itr = P_ks.begin();
-  IntegerVector sim_indices;
-  // IntegerVector::iterator pep_itr = k_indices.begin();
-
-  NumericVector::iterator means_itr = output.begin();
-
-  for(; Pk_itr != P_ks.end(); ++Pk_itr, ++means_itr) {
-    sim_indices = find_string_locs(assignment, as<std::string>(*Pk_itr));
-    if(sim_indices.size() == 0) return 0;
-    
-    bypass = as<std::string>(*Pk_itr) == k;
-    *means_itr = generate_mean(N, i, sim_indices, D, k_indices, bypass, prior);
-  }
-
-  return output;
-}
 
 //' Bayesian Filtering Probablity
 //' Calculate the probability of P(i in Group k | data) for all entities in Group k using simulated draws from a hierarchical Dirichlet sampling scheme.
@@ -104,51 +35,27 @@ NumericVector sample_means(const CharacterVector& P_ks, std::string k, int i, co
 
 
 // [[Rcpp::export]]
-NumericVector bayesian_prob(const CharacterVector& assignment, const NumericMatrix& D, std::string k, int B, std::string prior) {
+NumericVector bayesian_prob(double omega, double omega0, const CharacterVector& assignment, const NumericMatrix& D, std::string k, int B, std::string prior) {
 
-  IntegerVector k_indices = find_string_locs(assignment, k);
-  int N1 = k_indices.size();
 
-  NumericVector muk(N1);
-
-  // count number of entities per group
-  IntegerVector groups_table = table(assignment);
-  CharacterVector all_groups = groups_table.names();
-
-  int index = groups_table.findName(k);
-  groups_table(index) = 1;
-  // all_groups(index) = "-1";
-  // groups_table.names() = all_groups;
-
-  NumericVector groups_num = as<NumericVector>(groups_table);
+  // **********************************************
+  //
+  // Step 1: calculate empirical estiamte of mean
+  // for each entity in the selected class
+  //
+  // **********************************************
   
-  IntegerVector::iterator mu_itr = k_indices.begin();
-  NumericVector mean_vec(B);
-  NumericVector probs(N1);
+  // get vector sizes
+  int N = assignment.size();
+  
+  // identify indices within selected class
+  IntegerVector k_indices = find_string_locs(assignment, k);
+  // int N1 = k_indices.size();
+  
+  NumericVector mu_k = get_observed_means(N, omega, omega0, k_indices, D);
 
-  for(int i = 0; i < N1; ++i) {
-    // calculate observed mean
-    muk(i) = 0;
-    mu_itr = k_indices.begin();
-    for(; mu_itr != k_indices.end(); ++mu_itr){
-      muk(i) += D[assignment.size()* k_indices(i) + *mu_itr];
-    }
-    muk(i) = muk(i)/ (N1 - 1);
-
-    // draw k's to sample from:
-    CharacterVector k_rep = sample(all_groups, B, true, groups_num);
-    mean_vec = sample_means(k_rep, k, i, assignment, k_indices, D, prior);
-    
-    for(NumericVector::iterator bi = mean_vec.begin(); bi < mean_vec.end(); ++bi){
-      probs(i) += *bi < muk(i);
-    }
-    
-    
-    probs(i) = probs(i) / B;
-  }
-
-
+  IntegerVector class_table = table(assignment);
+  NumericVector probs = get_estimated_prob(omega, omega0, k_indices, class_table, k, assignment, D, B, mu_k, prior);
+  
   return probs; // DataFrame::create(_["k_ind"] = k_indices, _["i"] = seq_len(N1), _["mu"] = muk, _["probs"] = probs);
 }
-
-

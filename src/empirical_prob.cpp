@@ -72,3 +72,4 @@ NumericVector empirical_prob(const CharacterVector& assignment, const NumericMat
 
   return as<NumericVector>(probs) / K;
 }
+
