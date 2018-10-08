@@ -43,7 +43,7 @@ DataFrame identify_outliers(const CharacterVector& assignment, const NumericMatr
   IntegerVector index(Nr); IntegerVector::iterator index_i = index.begin();
 
   // Defined to help iteration
-  IntegerVector prot_breaks = cumsum(protein_table); IntegerVector::iterator break_i = prot_breaks.begin();
+  IntegerVector prot_breaks = cumsum(protein_table);IntegerVector::iterator break_i = prot_breaks.begin();
   int i = 0;
   Progress p(K, display_progress);
 
@@ -54,7 +54,8 @@ DataFrame identify_outliers(const CharacterVector& assignment, const NumericMatr
     }
     p.increment();
     
-    IntegerVector peptides = find_string_locs(assignment, as<std::string>(*prot)); IntegerVector::iterator peptide_i = peptides.begin();
+    IntegerVector peptides = find_string_locs(assignment, as<std::string>(*prot));
+    IntegerVector::iterator peptide_i = peptides.begin();
     NumericVector pep_probs = bayesian_prob(omega, omega0, assignment, D, as<std::string>(*prot), B, prior);
     NumericVector pep_probs2 = empirical_prob(assignment, D, as<std::string>(*prot));
     NumericVector::iterator vec_prob_i = pep_probs.begin();

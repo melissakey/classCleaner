@@ -6,3 +6,6 @@
 \usage{
 sim_by_class(n, Nk, s, tau, rho)
 }
+\description{
+tmp function
+}
