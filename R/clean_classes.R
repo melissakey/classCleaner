@@ -19,7 +19,6 @@ clean_classes <- function(D, assignment, classes = 'all', tau = c(0.01, 0.05, 0.
   if(length(assignment) != nrow(D)) stop('length(asssignment) != nrow(D)')
   if(min(D) < 0) stop("D should be a distance matrix with entries >= 0.")
   
-  
   class_table <- table(assignment)
   
   # progressbar
@@ -28,7 +27,7 @@ clean_classes <- function(D, assignment, classes = 'all', tau = c(0.01, 0.05, 0.
   
   if(!identical(classes,"all")) {
     Nk <- tryCatch({
-      Nk.tmp <- Nk[classes]
+      Nk.tmp <- class_table[classes]
     },
       error = function(cond){
         message("An error ocurred in selecting which classes to filter.")
@@ -40,9 +39,7 @@ clean_classes <- function(D, assignment, classes = 'all', tau = c(0.01, 0.05, 0.
         message("Here's the original warning message:")
         message(cond)
       })
-    
   }
-  
   # handle labels
   if(is.null(labels)){
     if(is.null(rownames(D))){
@@ -51,15 +48,12 @@ clean_classes <- function(D, assignment, classes = 'all', tau = c(0.01, 0.05, 0.
     } else labels <- rownames(D)
   }
   
-  
-  result <- lapply(names(Nk)[Nk > 1], {
+  result <- lapply(names(Nk)[Nk > 1], function(k){
     D11 <- D[which(assignment == k), which(assignment == k)]
     D21 <- D[which(assignment == k), which(assignment != k)]
     
-    
-    
     tc <- quantile(D21, tau)
-    
+
     Zi <- as.data.frame(t(sapply(1:Nk[k], function(i) colSums(outer(D11[-i, i], tc, "<")))))
     
     Zi <- reshape(Zi,
@@ -76,20 +70,16 @@ clean_classes <- function(D, assignment, classes = 'all', tau = c(0.01, 0.05, 0.
     Zi <- within(Zi, {
       tau <- as.numeric(sub("%","",cutoff)) / 100
       Nk <- as.numeric(Nk[k])
-      
+
       p <- 1 - pbinom(Z, Nk - 1, tau)
-      
+
       k <-  k
       index <- match(instance, labels)
-      
-      # if(!is.null(colnames(D11))) label <- colnames(D11)
-      # else label <- paste0("N",k,".i",1:Nk[k])
-      
-      
-      p_BH <- p.adjust(p, method = "BH")
-      p_BY <- p.adjust(p, method = 'BY')
+
+      p_BH <- unlist(tapply(p, tau, p.adjust, method = "BH"))
+      p_BY <- unlist(tapply(p, tau, p.adjust, method = 'BY'))
     })
   })
   result <- do.call("rbind", result)
-  result[c("k", "index", "label", 'tau', "Zi", "p", "p_BH", "p_BY", "Nk")]
+  result[c("k", "index", "instance", 'tau', "Z", "p", "p_BH", "p_BY", "Nk")]
 }
