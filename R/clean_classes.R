@@ -52,26 +52,27 @@ clean_classes <- function(D, assignment, classes = 'all', tau = c(0.01, 0.05, 0.
     D11 <- D[which(assignment == k), which(assignment == k)]
     D21 <- D[which(assignment == k), which(assignment != k)]
     
-    tc <- quantile(D21, tau)
+    m_tc <- quantile(D21, tau)
+    psi_t <- psi(D11[lower.tri(D11)], D21)
 
-    Zi <- as.data.frame(t(sapply(1:Nk[k], function(i) colSums(outer(D11[-i, i], tc, "<")))))
     
+    #### flipped  direction
+    Zi <- as.data.frame(t(sapply(1:Nk[k], function(i) colSums(outer(D11[-i, i], m_tc, "<")))))
     Zi <- reshape(Zi,
       direction = 'long',
       idvar = 'instance',
       ids = labels[assignment == k],
       timevar = 'cutoff',
       times = names(Zi),
-      v.names = "Z",
-      varying = list(names(Zi)),
+      v.names = "Zi",
+      varying = list(names(Zi))
       # new.row.names = 1:prod(dim(Zi))
     )
-    
     Zi <- within(Zi, {
       tau <- as.numeric(sub("%","",cutoff)) / 100
       Nk <- as.numeric(Nk[k])
 
-      p <- 1 - pbinom(Z, Nk - 1, tau)
+      p <- 1 - pbinom(Zi, Nk - 1, tau)
 
       k <-  k
       index <- match(instance, labels)
@@ -79,7 +80,60 @@ clean_classes <- function(D, assignment, classes = 'all', tau = c(0.01, 0.05, 0.
       p_BH <- unlist(tapply(p, tau, p.adjust, method = "BH"))
       p_BY <- unlist(tapply(p, tau, p.adjust, method = 'BY'))
     })
+    
+    
+    ###### original direction
+    Zi_psi <- data.frame(
+      Zi = vapply(1:Nk[k], function(i) sum(D11[-i,i] < psi_t['t']), 0),
+      instance = labels[assignment == k],
+      index  = which(assignment == k)
+    )
+    Zi_orig <- within(Zi_psi, {
+      z.0a <- stats::qbinom(alpha, Nk[k]-1, psi_t['tau']) - 1
+      tau.hat <- Zi / (Nk[k] - 1)
+      tau.tilde <- (psi_t['tau'] + tau.hat) / 2
+      
+      z.ia <- stats::qbinom(alpha, Nk[k]-1, tau.tilde) - 1
+      
+      c.ia <- pmin(z.0a, z.ia)
+      
+      alpha.i <- stats::pbinom(c.ia, Nk[k] - 1, tau.tilde)
+      
+      tc <- psi_t['t']
+      tau.bar <- psi_t['tau']
+      
+      alpha <- alpha
+      alpha0 <- alpha0
+      # if(!is.null(colnames(D11))) label <- colnames(D11)
+      # else label <- paste0("N", k, ".i", 1:Nk[k])
+      Nk <-  as.numeric(Nk[k])
+      k <- factor(k)
+    })
+    Zi_beta <- within(Zi_psi[order(Zi_psi$Zi, decreasing = TRUE),], {
+      beta_BH <- beta0 * (Nk[k]:1) / Nk[k]
+      beta_BY <- beta_BH / cumsum(1 / 1:Nk[k])
+      Y_BH <- qbinom(beta_BH, Nk[k] - 1, 1 - psi_t['tau'])
+      Y_BY <- qbinom(beta_BY, Nk[k] - 1, 1 - psi_t['tau'])
+      Nk <- Nk[k]-1
+      keep_BH <- cumsum(Zi <= Y_BH) == 0
+      keep_BY <- cumsum(Zi <= Y_BY) == 0
+      tc <- psi_t['t']
+      tau.bar <- psi_t['tau']
+      k <- k
+    })
+    Zi_beta <- Zi_beta[order(Zi_beta$index),]
+    list(
+      flipped = Zi,
+      alpha = Zi_orig,
+      beta = Zi_beta
+    )
   })
-  result <- do.call("rbind", result)
-  result[c("k", "index", "instance", 'tau', "Z", "p", "p_BH", "p_BY", "Nk")]
+  
+  result <- lapply(1:3, function(i) {
+    do.call("rbind", lapply(result, function(x) x[[i]]))
+  })
+  names(result) <- c("melissa", "alpha", "beta")
+
+  result$melissa <- result$melissa[c("k", "index", "instance", 'tau', "Zi", "p", "p_BH", "p_BY", "Nk")]
+  result
 }
