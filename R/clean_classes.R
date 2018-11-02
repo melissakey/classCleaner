@@ -5,6 +5,11 @@
 #' @param assignment The assigned group of each instance
 #' @param classes The subset of classes on which filtering is performed, or "all" if all classes should be analyzed.
 #' @param labels identifier for each instance.  If NULL, the row/column names or indices of D are used
+#' @param tau cutoff for F distribution (using F-distribution only)
+#' @param alpha0 desired overall, FWER-style type I error rate
+#' @param beta0 desired overall FNR-style type II error rate 
+#' @param labels a vector of labels for each instance.  Must be the same length as D.  If NULL, the algorithm will check for rownames and column names in D.  If none are found, the instances will be labeled with numbers 1:nrow(D).
+#' @display_progress future progress bar (not used yet)
 #' 
 #' @details
 #' For each instance in an analyzed class, this function will estimate the probability that it was correctly placed in that class.
@@ -12,7 +17,7 @@
 #' @export
 
 
-clean_classes <- function(D, assignment, classes = 'all', tau = c(0.01, 0.05, 0.1), labels = NULL, display_progress = FALSE) {
+clean_classes <- function(D, assignment, classes = 'all', tau = c(0.01, 0.05, 0.1), alpha0 = 0.05, beta0 = 0.05, labels = NULL, display_progress = FALSE) {
   
   # Check to make sure distance matrix is a symmetric, non-negative definite matrix and we have an assignment for each entry.
   if(!(is.matrix(D) && isSymmetric(D) && is.numeric(D))) stop('D must be a symmetric matrix with numeric entries')
@@ -57,7 +62,7 @@ clean_classes <- function(D, assignment, classes = 'all', tau = c(0.01, 0.05, 0.
 
     
     #### flipped  direction
-    Zi <- as.data.frame(t(sapply(1:Nk[k], function(i) colSums(outer(D11[-i, i], m_tc, "<")))))
+    Zi <- as.data.frame(t(sapply(1:Nk[k], function(i) colSums(outer(D11[-i, i], c(m_tc, psi_t['t']), "<")))))
     Zi <- reshape(Zi,
       direction = 'long',
       idvar = 'instance',
