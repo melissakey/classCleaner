@@ -54,15 +54,19 @@ clean_classes <- function(D, assignment, classes = 'all', tau = c(0.01, 0.05, 0.
   }
   
   result <- lapply(names(Nk)[Nk > 1], function(k){
+    alpha <- alpha0 / Nk[k]
+    
     D11 <- D[which(assignment == k), which(assignment == k)]
     D21 <- D[which(assignment == k), which(assignment != k)]
     
-    m_tc <- quantile(D21, tau)
     psi_t <- psi(D11[lower.tri(D11)], D21)
-
+    m_tc <- c(quantile(D21, tau), psi_t['t'])
+    names(m_tc)[length(m_tc)] <- paste0(psi_t['tau'] * 100, "%")
+    
+    
     
     #### flipped  direction
-    Zi <- as.data.frame(t(sapply(1:Nk[k], function(i) colSums(outer(D11[-i, i], c(m_tc, psi_t['t']), "<")))))
+    Zi <- as.data.frame(t(sapply(1:Nk[k], function(i) colSums(outer(D11[-i, i], m_tc, "<")))))
     Zi <- reshape(Zi,
       direction = 'long',
       idvar = 'instance',
@@ -94,15 +98,16 @@ clean_classes <- function(D, assignment, classes = 'all', tau = c(0.01, 0.05, 0.
       index  = which(assignment == k)
     )
     Zi_orig <- within(Zi_psi, {
-      z.0a <- stats::qbinom(alpha, Nk[k]-1, psi_t['tau']) - 1
-      tau.hat <- Zi / (Nk[k] - 1)
-      tau.tilde <- (psi_t['tau'] + tau.hat) / 2
-      
-      z.ia <- stats::qbinom(alpha, Nk[k]-1, tau.tilde) - 1
-      
-      c.ia <- pmin(z.0a, z.ia)
-      
-      alpha.i <- stats::pbinom(c.ia, Nk[k] - 1, tau.tilde)
+      c.ia <- stats::qbinom(alpha, Nk[k]-1, psi_t['tau'])
+      # tau.hat <- Zi / (Nk[k] - 1)
+      # tau.tilde <- (psi_t['tau'] + tau.hat) / 2
+      # 
+      # z.ia <- stats::qbinom(alpha, Nk[k]-1, tau.tilde) - 1
+      # 
+      # c.ia <- pmin(z.0a, z.ia)
+      # 
+      alpha.i <- stats::pbinom(c.ia, Nk[k] - 1, psi_t['tau'])
+      p.i <- stats::pbinom(Zi, Nk[k] - 1, psi_t['tau'])
       
       tc <- psi_t['t']
       tau.bar <- psi_t['tau']
