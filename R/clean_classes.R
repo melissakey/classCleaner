@@ -60,17 +60,12 @@ clean_classes <- function(D, assignment, classes = 'all', tau = c(0.01, 0.05, 0.
     D21 <- D[which(assignment == k), which(assignment != k)]
     
     alpha <- alpha0 / Nk[k]
-    
-    m_tc <- quantile(D21, tau)
-    psi_t <- psi(D11[lower.tri(D11)], D21)
-    m_tc <- c(m_tc, psi_t["t"])
-    names(m_tc)[length(m_tc)] <- psi_t['tau'] * 100
 
-    pp <- sapply(1:Nk[k], function(i) colMeans(outer(D21[i,], m_tc, "<")))
 
     psi_t <- psi(D11[lower.tri(D11)], D21)
     m_tc <- c(quantile(D21, tau), psi_t['t'])
     names(m_tc)[length(m_tc)] <- paste0(psi_t['tau'] * 100, "%")
+    pp <- sapply(1:Nk[k], function(i) colMeans(outer(D21[i,], m_tc, "<")))
     
     #### flipped  direction
     Zi <- as.data.frame(t(sapply(1:Nk[k], function(i) colSums(outer(D11[-i, i], m_tc, "<")))))
@@ -87,11 +82,13 @@ clean_classes <- function(D, assignment, classes = 'all', tau = c(0.01, 0.05, 0.
     Zi <- within(Zi, {
       tau <- as.numeric(sub("%","",cutoff)) / 100
       index <- match(instance, labels)
+      i <- as.numeric(factor(index))
       p_old <- pbinom(Zi, Nk[k] - 1, tau, lower.tail = FALSE)      
       Nk <- as.numeric(Nk[k])
       # 
-      p <-sapply(index, function(i)
-        poisbinom::ppoisbinom(Zi[i],  pp[cutoff[i],-i], lower_tail = FALSE))
+      p <-sapply(i, function(j)
+        1 - poibin::ppoibin(Zi[j],  pp[cutoff[j],-i[j]])
+      )
 
       # 
       k <-  k
@@ -108,7 +105,10 @@ clean_classes <- function(D, assignment, classes = 'all', tau = c(0.01, 0.05, 0.
     )
     Zi_psi <- within(Zi_psi[order(Zi_psi$Zi, decreasing = TRUE),], {
       beta_BH <- beta0 * (Nk[k]:1) / Nk[k]
-      beta_BY <- beta_BH / cumsum(1 / 1:Nk[k]) 
+      # beta_BY <- beta_BH / cumsum(1 / 1:Nk[k])
+      beta_BY <- tapply(beta_BH / cumsum(1 / 1:Nk[k]), Zi, max)[as.character(Zi)]
+      beta_BH <- tapply(beta_BH, Zi, max)[as.character(Zi)]
+      
       Y_BH <- qbinom(beta_BH, Nk[k] - 1, psi_t['tau'], lower.tail = FALSE)
       Y_BY <- qbinom(beta_BY, Nk[k] - 1, psi_t['tau'], lower.tail = FALSE)
       keep_BH <- cumsum(Zi <= Y_BH) == 0
