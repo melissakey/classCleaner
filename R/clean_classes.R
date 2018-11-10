@@ -54,8 +54,7 @@ clean_classes <- function(D, assignment, classes = 'all', tau = c(0.01, 0.05, 0.
   }
   
   result <- lapply(names(Nk)[Nk > 1], function(k){
-    alpha <- alpha0 / Nk[k]
-    
+   
     D11 <- D[which(assignment == k), which(assignment == k)]
     D21 <- D[which(assignment == k), which(assignment != k)]
     
