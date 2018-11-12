@@ -127,9 +127,9 @@ clean_classes <- function(D, assignment, classes = 'all', tau = c(0.01, 0.05, 0.
 
       keep_BH <- cumsum(Zi <= Y_BH) == 0
       keep_BY <- cumsum(Zi <= Y_BY) == 0
-      keep_ci <- Zi <= c.ia
-      keep_z0 <- Zi <= z.0a
-      keep_zi <- Zi <= z.ia
+      keep_ci <- Zi > c.ia
+      keep_z0 <- Zi > z.0a
+      keep_zi <- Zi > z.ia
     })
     Zi_psi <- Zi_psi[order(Zi_psi$index),]
 
