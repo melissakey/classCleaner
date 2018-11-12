@@ -102,7 +102,7 @@ clean_classes <- function(D, assignment, classes = 'all', tau = c(0.01, 0.05, 0.
       instance = labels[assignment == k],
       index  = which(assignment == k)
     )
-    Zi_psi <- within(Zi_psi[order(Zi_psi$Zi, decreasing = TRUE),], {
+    Zi_psi <- within(Zi_psi[order(Zi_psi$Zi),], {
       beta_BH <- beta0 * (Nk[k]:1) / Nk[k]
       # beta_BY <- beta_BH / cumsum(1 / 1:Nk[k])
       beta_BY <- tapply(beta_BH / cumsum(1 / 1:Nk[k]), Zi, max)[as.character(Zi)]
@@ -110,6 +110,8 @@ clean_classes <- function(D, assignment, classes = 'all', tau = c(0.01, 0.05, 0.
       
       Y_BH <- qbinom(beta_BH, Nk[k] - 1, psi_t['tau'], lower.tail = FALSE)
       Y_BY <- qbinom(beta_BY, Nk[k] - 1, psi_t['tau'], lower.tail = FALSE)
+      
+      
 
       z.0a <- stats::qbinom(alpha, Nk[k] - 1, 1 - psi_t['tau']) - 1
       tau.hat <- Zi / (Nk[k] - 1)
@@ -125,8 +127,8 @@ clean_classes <- function(D, assignment, classes = 'all', tau = c(0.01, 0.05, 0.
       Nk <-  as.numeric(Nk[k])
       k <- factor(k)
 
-      keep_BH <- cumsum(Zi <= Y_BH) == 0
-      keep_BY <- cumsum(Zi <= Y_BY) == 0
+      keep_BH <- !(cumsum(Zi > Y_BH) == 0)
+      keep_BY <- !(cumsum(Zi > Y_BY) == 0)
       keep_ci <- Zi > c.ia
       keep_z0 <- Zi > z.0a
       keep_zi <- Zi > z.ia
