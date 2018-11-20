@@ -45,6 +45,9 @@ clean_classes <- function(D, assignment, classes = 'all', tau = c(0.01, 0.05, 0.
         message(cond)
       })
   }
+  else {Nk <- class_table}
+  
+  
   # handle labels
   if(is.null(labels)){
     if(is.null(rownames(D))){
@@ -103,48 +106,31 @@ clean_classes <- function(D, assignment, classes = 'all', tau = c(0.01, 0.05, 0.
       index  = which(assignment == k)
     )
     Zi_psi <- within(Zi_psi[order(Zi_psi$Zi),], {
-      beta_BH <- beta0 * (Nk[k]:1) / Nk[k]
-      # beta_BY <- beta_BH / cumsum(1 / 1:Nk[k])
-      beta_BY <- tapply(beta_BH / cumsum(1 / 1:Nk[k]), Zi, max)[as.character(Zi)]
-      beta_BH <- tapply(beta_BH, Zi, max)[as.character(Zi)]
-      
-      Y_BH <- qbinom(beta_BH, Nk[k] - 1, psi_t['tau'], lower.tail = FALSE)
-      Y_BY <- qbinom(beta_BY, Nk[k] - 1, psi_t['tau'], lower.tail = FALSE)
-      
-      
-
-      z.0a <- stats::qbinom(alpha, Nk[k] - 1, 1 - psi_t['tau']) - 1
-      tau.hat <- Zi / (Nk[k] - 1)
-      tau.tilde <- (1 - psi_t['tau'] + tau.hat) / 2
-      
-      z.ia <- stats::qbinom(alpha, Nk[k] - 1, tau.tilde) - 1
-      c.ia <- pmin(z.0a, z.ia)
-      alpha.i <- stats::pbinom(c.ia, Nk[k] - 1, tau.tilde)
-
+      ca <- stats::qbinom(alpha, Nk[k] - 1, 1 - psi_t['tau'])
+      p <- stats::pbinom(Zi, Nk[k] - 1, 1 - psi_t['tau'])
+      p_BH <- stats::p.adjust(p, method = 'BH')
+      p_BU <- stats::p.adjust(p, method = 'BY')
+      p_Bon <- stats::p.adjust(p, method = 'bonferroni')
       tc <- psi_t['t']
       tau.bar <- 1 - psi_t['tau']
       alpha0 <- alpha0
       Nk <-  as.numeric(Nk[k])
       k <- factor(k)
 
-      keep_BH <- !(cumsum(Zi > Y_BH) == 0)
-      keep_BY <- !(cumsum(Zi > Y_BY) == 0)
-      keep_ci <- Zi > c.ia
-      keep_z0 <- Zi > z.0a
-      keep_zi <- Zi > z.ia
+      keep_c <- Zi > ca
     })
     Zi_psi <- Zi_psi[order(Zi_psi$index),]
 
     list(
-      fdr = Zi,
-      fnr = Zi_psi
+      f = Zi,
+      g = Zi_psi
     )
   })
   
   result <- lapply(1:length(result[[1]]), function(i) {
     do.call("rbind", lapply(result, function(x) x[[i]]))
   })
-  names(result) <- c("fdr_method","fnr_methods")
+  names(result) <- c("f_only","fg_method")
 
   result$fdr_method <- result$fdr_method[c("k", "index", "instance", 'tau', "Zi", "p", "p_BH", "p_BY", "Nk")]
   result
