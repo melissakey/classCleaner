@@ -8,6 +8,6 @@ psi <-function(D1, D2){
   tc <-  stats::median(tt[which(delta <= delta[which.min(delta)] + 10e-8)])
   c(
     t = tc,
-    tau = F2(tc)
+    tau = F1(tc)
   )
 }

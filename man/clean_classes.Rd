@@ -4,9 +4,8 @@
 \alias{clean_classes}
 \title{Clean Classes}
 \usage{
-clean_classes(D, assignment, classes = "all", tau = c(0.01, 0.05, 0.1),
-  alpha0 = 0.05, beta0 = 0.05, labels = NULL,
-  display_progress = FALSE)
+clean_classes(D, assignment, classes = "all", alpha0 = 0.05,
+  beta0 = 0.05, labels = NULL, display_progress = FALSE)
 }
 \arguments{
 \item{D}{A distance matrix containing the pairwise dissimilarity scores between instances}
@@ -15,13 +14,13 @@ clean_classes(D, assignment, classes = "all", tau = c(0.01, 0.05, 0.1),
 
 \item{classes}{The subset of classes on which filtering is performed, or "all" if all classes should be analyzed.}
 
-\item{tau}{cutoff for F distribution (using F-distribution only)}
-
 \item{alpha0}{desired overall, FWER-style type I error rate}
 
 \item{beta0}{desired overall FNR-style type II error rate}
 
 \item{labels}{identifier for each instance.  If NULL, the row/column names or indices of D are used}
+
+\item{tau}{cutoff for F distribution (using F-distribution only)}
 
 \item{labels}{a vector of labels for each instance.  Must be the same length as D.  If NULL, the algorithm will check for rownames and column names in D.  If none are found, the instances will be labeled with numbers 1:nrow(D).}
 }
