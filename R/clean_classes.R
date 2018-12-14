@@ -17,7 +17,7 @@
 #' @export
 
 
-clean_classes <- function(D, assignment, classes = 'all', tau = c(0.01, 0.05, 0.1), alpha0 = 0.05, beta0 = 0.05, labels = NULL, display_progress = FALSE) {
+clean_classes <- function(D, assignment, classes = 'all', alpha0 = 0.05, beta0 = 0.05, labels = NULL, display_progress = FALSE) {
   
   # Check to make sure distance matrix is a symmetric, non-negative definite matrix and we have an assignment for each entry.
   if(!(is.matrix(D) && isSymmetric(D) && is.numeric(D))) stop('D must be a symmetric matrix with numeric entries')
@@ -65,73 +65,34 @@ clean_classes <- function(D, assignment, classes = 'all', tau = c(0.01, 0.05, 0.
 
 
     psi_t <- psi(D11[lower.tri(D11)], D21)
-    m_tc <- c(quantile(D21, tau), psi_t['t'])
-    names(m_tc)[length(m_tc)] <- paste0(psi_t['tau'] * 100, "%")
-    pp <- sapply(1:Nk[k], function(i) colMeans(outer(D21[i,], m_tc, "<")))
+    # m_tc <- c(quantile(D21, tau), psi_t['t'])
+    # names(m_tc)[length(m_tc)] <- paste0(psi_t['tau'] * 100, "%")
+    # pp <- sapply(1:Nk[k], function(i) colMeans(outer(D21[i,], m_tc, "<")))
     
-    #### flipped  direction
-    Zi <- as.data.frame(t(sapply(1:Nk[k], function(i) colSums(outer(D11[-i, i], m_tc, "<")))))
-    Zi <- reshape(Zi,
-      direction = 'long',
-      idvar = 'instance',
-      ids = labels[assignment == k],
-      timevar = 'cutoff',
-      times = names(Zi),
-      v.names = "Zi",
-      varying = list(names(Zi))
-      # new.row.names = 1:prod(dim(Zi))
-    )
-    Zi <- within(Zi, {
-      tau <- as.numeric(sub("%","",cutoff)) / 100
-      index <- match(instance, labels)
-      i <- as.numeric(factor(index))
-      p_old <- pbinom(Zi, Nk[k] - 1, tau, lower.tail = FALSE)
-      Nk <- as.numeric(Nk[k])
-      # 
-      p <-sapply(i, function(j)
-        1 - poibin::ppoibin(Zi[j],  pp[cutoff[j],-i[j]])
-      )
-
-      # 
-      k <-  k
-      # 
-      p_BH <- unlist(tapply(p, tau, p.adjust, method = "BH"))
-      p_BY <- unlist(tapply(p, tau, p.adjust, method = 'BY'))
-    })
-    
-    ###### original direction
     Zi_psi <- data.frame(
       Zi = vapply(1:Nk[k], function(i) sum(D11[-i,i] < psi_t['t']), 0),
       instance = labels[assignment == k],
       index  = which(assignment == k)
     )
     Zi_psi <- within(Zi_psi[order(Zi_psi$Zi),], {
-      ca <- stats::qbinom(alpha, Nk[k] - 1, 1 - psi_t['tau'])
-      p <- stats::pbinom(Zi, Nk[k] - 1, 1 - psi_t['tau'])
+      ca <- stats::qbinom(alpha, Nk[k] - 1, psi_t['tau'])
+      cb <- stats::qbinom(alpha, Nk[k] - 1, 1 - psi_t['tau'], lower.tail = FALSE) 
+      q <- 1 - stats::pbinom(Zi, Nk[k] - 1, 1 - psi_t['tau'])
+      q_BH <- stats::p.adjust(q, method = 'BH')
+      q_BY <- stats::p.adjust(q, method = 'BY')
+      q_Bon <- stats::p.adjust(q, method = 'bonferroni')
+
+      p <- stats::pbinom(Zi, Nk[k] - 1, psi_t['tau'])
       p_BH <- stats::p.adjust(p, method = 'BH')
-      p_BU <- stats::p.adjust(p, method = 'BY')
+      p_BY <- stats::p.adjust(p, method = 'BY')
       p_Bon <- stats::p.adjust(p, method = 'bonferroni')
-      tc <- psi_t['t']
-      tau.bar <- 1 - psi_t['tau']
+
+      t <- psi_t['t']
+      tau <- psi_t['tau']
       alpha0 <- alpha0
       Nk <-  as.numeric(Nk[k])
       k <- factor(k)
-
-      keep_c <- Zi > ca
     })
-    Zi_psi <- Zi_psi[order(Zi_psi$index),]
-
-    list(
-      f = Zi,
-      g = Zi_psi
-    )
   })
-  
-  result <- lapply(1:length(result[[1]]), function(i) {
-    do.call("rbind", lapply(result, function(x) x[[i]]))
-  })
-  names(result) <- c("f_only","fg_method")
-
-  result$fdr_method <- result$fdr_method[c("k", "index", "instance", 'tau', "Zi", "p", "p_BH", "p_BY", "Nk")]
-  result
+  result <- do.call("rbind", result)
 }
