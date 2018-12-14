@@ -45,6 +45,7 @@ clean_classes <- function(D, assignment, classes = 'all', tau = c(0.01, 0.05, 0.
         message(cond)
       })
   }
+  else Nk <- class_table
   # handle labels
   if(is.null(labels)){
     if(is.null(rownames(D))){
