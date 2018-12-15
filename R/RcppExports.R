@@ -81,6 +81,10 @@ test <- function(vec1) {
     .Call(`_classCleaner_test`, vec1)
 }
 
+psi <- function(x, y) {
+    .Call(`_classCleaner_psi`, x, y)
+}
+
 #' @title tmp function
 #' @export
 sim_by_class <- function(n, Nk, s, tau, rho) {

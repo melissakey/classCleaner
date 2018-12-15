@@ -20,6 +20,8 @@ clean_classes(D, assignment, classes = "all", alpha0 = 0.05,
 
 \item{labels}{identifier for each instance.  If NULL, the row/column names or indices of D are used}
 
+\item{display_progress}{future progress bar (not used yet)}
+
 \item{tau}{cutoff for F distribution (using F-distribution only)}
 
 \item{labels}{a vector of labels for each instance.  Must be the same length as D.  If NULL, the algorithm will check for rownames and column names in D.  If none are found, the instances will be labeled with numbers 1:nrow(D).}

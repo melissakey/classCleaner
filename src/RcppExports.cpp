@@ -121,6 +121,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// psi
+NumericVector psi(const NumericVector& x, const NumericVector& y);
+RcppExport SEXP _classCleaner_psi(SEXP xSEXP, SEXP ySEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type y(ySEXP);
+    rcpp_result_gen = Rcpp::wrap(psi(x, y));
+    return rcpp_result_gen;
+END_RCPP
+}
 // sim_by_class
 arma::mat sim_by_class(arma::uword n, const arma::uvec& Nk, const arma::colvec& s, double tau, const arma::mat& rho);
 RcppExport SEXP _classCleaner_sim_by_class(SEXP nSEXP, SEXP NkSEXP, SEXP sSEXP, SEXP tauSEXP, SEXP rhoSEXP) {
@@ -159,6 +171,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_classCleaner_get_simulated_means", (DL_FUNC) &_classCleaner_get_simulated_means, 10},
     {"_classCleaner_identify_outliers", (DL_FUNC) &_classCleaner_identify_outliers, 9},
     {"_classCleaner_test", (DL_FUNC) &_classCleaner_test, 1},
+    {"_classCleaner_psi", (DL_FUNC) &_classCleaner_psi, 2},
     {"_classCleaner_sim_by_class", (DL_FUNC) &_classCleaner_sim_by_class, 5},
     {"_classCleaner_sim_by_instance", (DL_FUNC) &_classCleaner_sim_by_instance, 4},
     {NULL, NULL, 0}
