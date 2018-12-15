@@ -9,7 +9,7 @@
 #' @param alpha0 desired overall, FWER-style type I error rate
 #' @param beta0 desired overall FNR-style type II error rate 
 #' @param labels a vector of labels for each instance.  Must be the same length as D.  If NULL, the algorithm will check for rownames and column names in D.  If none are found, the instances will be labeled with numbers 1:nrow(D).
-#' @display_progress future progress bar (not used yet)
+#' @param display_progress future progress bar (not used yet)
 #' 
 #' @details
 #' For each instance in an analyzed class, this function will estimate the probability that it was correctly placed in that class.
