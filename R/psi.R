@@ -1,4 +1,4 @@
-psi <-function(D1, D2){
+psi_old <-function(D1, D2){
   F1<-stats::ecdf(D1)
   F2<-stats::ecdf(D2)
   N<-4000
