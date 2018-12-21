@@ -6,121 +6,6 @@
 
 using namespace Rcpp;
 
-// bayesian_prob
-NumericVector bayesian_prob(double omega, double omega0, const CharacterVector& assignment, const NumericMatrix& D, std::string k, int B, std::string prior);
-RcppExport SEXP _classCleaner_bayesian_prob(SEXP omegaSEXP, SEXP omega0SEXP, SEXP assignmentSEXP, SEXP DSEXP, SEXP kSEXP, SEXP BSEXP, SEXP priorSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< double >::type omega(omegaSEXP);
-    Rcpp::traits::input_parameter< double >::type omega0(omega0SEXP);
-    Rcpp::traits::input_parameter< const CharacterVector& >::type assignment(assignmentSEXP);
-    Rcpp::traits::input_parameter< const NumericMatrix& >::type D(DSEXP);
-    Rcpp::traits::input_parameter< std::string >::type k(kSEXP);
-    Rcpp::traits::input_parameter< int >::type B(BSEXP);
-    Rcpp::traits::input_parameter< std::string >::type prior(priorSEXP);
-    rcpp_result_gen = Rcpp::wrap(bayesian_prob(omega, omega0, assignment, D, k, B, prior));
-    return rcpp_result_gen;
-END_RCPP
-}
-// empirical_prob
-NumericVector empirical_prob(const CharacterVector& assignment, const NumericMatrix& D, std::string k);
-RcppExport SEXP _classCleaner_empirical_prob(SEXP assignmentSEXP, SEXP DSEXP, SEXP kSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const CharacterVector& >::type assignment(assignmentSEXP);
-    Rcpp::traits::input_parameter< const NumericMatrix& >::type D(DSEXP);
-    Rcpp::traits::input_parameter< std::string >::type k(kSEXP);
-    rcpp_result_gen = Rcpp::wrap(empirical_prob(assignment, D, k));
-    return rcpp_result_gen;
-END_RCPP
-}
-// get_estimated_prob
-NumericVector get_estimated_prob(double omega, double omega0, const IntegerVector& k_indices, const IntegerVector& class_table, std::string k, const CharacterVector& assignment, const NumericMatrix& D, int B, const NumericVector& observed_means, std::string prior);
-RcppExport SEXP _classCleaner_get_estimated_prob(SEXP omegaSEXP, SEXP omega0SEXP, SEXP k_indicesSEXP, SEXP class_tableSEXP, SEXP kSEXP, SEXP assignmentSEXP, SEXP DSEXP, SEXP BSEXP, SEXP observed_meansSEXP, SEXP priorSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< double >::type omega(omegaSEXP);
-    Rcpp::traits::input_parameter< double >::type omega0(omega0SEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type k_indices(k_indicesSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type class_table(class_tableSEXP);
-    Rcpp::traits::input_parameter< std::string >::type k(kSEXP);
-    Rcpp::traits::input_parameter< const CharacterVector& >::type assignment(assignmentSEXP);
-    Rcpp::traits::input_parameter< const NumericMatrix& >::type D(DSEXP);
-    Rcpp::traits::input_parameter< int >::type B(BSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type observed_means(observed_meansSEXP);
-    Rcpp::traits::input_parameter< std::string >::type prior(priorSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_estimated_prob(omega, omega0, k_indices, class_table, k, assignment, D, B, observed_means, prior));
-    return rcpp_result_gen;
-END_RCPP
-}
-// get_observed_means
-NumericVector get_observed_means(int N, double omega, double omega0, const IntegerVector& k_indices, const NumericMatrix& D);
-RcppExport SEXP _classCleaner_get_observed_means(SEXP NSEXP, SEXP omegaSEXP, SEXP omega0SEXP, SEXP k_indicesSEXP, SEXP DSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< int >::type N(NSEXP);
-    Rcpp::traits::input_parameter< double >::type omega(omegaSEXP);
-    Rcpp::traits::input_parameter< double >::type omega0(omega0SEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type k_indices(k_indicesSEXP);
-    Rcpp::traits::input_parameter< const NumericMatrix& >::type D(DSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_observed_means(N, omega, omega0, k_indices, D));
-    return rcpp_result_gen;
-END_RCPP
-}
-// get_simulated_means
-NumericVector get_simulated_means(double omega, double omega0, int K, const Rcpp::CharacterVector& simulated_ks, std::string k, int i, const Rcpp::CharacterVector& assignment, const Rcpp::IntegerVector& k_indices, const Rcpp::NumericMatrix& D, std::string prior);
-RcppExport SEXP _classCleaner_get_simulated_means(SEXP omegaSEXP, SEXP omega0SEXP, SEXP KSEXP, SEXP simulated_ksSEXP, SEXP kSEXP, SEXP iSEXP, SEXP assignmentSEXP, SEXP k_indicesSEXP, SEXP DSEXP, SEXP priorSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< double >::type omega(omegaSEXP);
-    Rcpp::traits::input_parameter< double >::type omega0(omega0SEXP);
-    Rcpp::traits::input_parameter< int >::type K(KSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::CharacterVector& >::type simulated_ks(simulated_ksSEXP);
-    Rcpp::traits::input_parameter< std::string >::type k(kSEXP);
-    Rcpp::traits::input_parameter< int >::type i(iSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::CharacterVector& >::type assignment(assignmentSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type k_indices(k_indicesSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type D(DSEXP);
-    Rcpp::traits::input_parameter< std::string >::type prior(priorSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_simulated_means(omega, omega0, K, simulated_ks, k, i, assignment, k_indices, D, prior));
-    return rcpp_result_gen;
-END_RCPP
-}
-// identify_outliers
-DataFrame identify_outliers(const CharacterVector& assignment, const NumericMatrix& D, int B, int min_group_size, std::string prior, const CharacterVector& labels, bool display_progress, double omega, double omega0);
-RcppExport SEXP _classCleaner_identify_outliers(SEXP assignmentSEXP, SEXP DSEXP, SEXP BSEXP, SEXP min_group_sizeSEXP, SEXP priorSEXP, SEXP labelsSEXP, SEXP display_progressSEXP, SEXP omegaSEXP, SEXP omega0SEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const CharacterVector& >::type assignment(assignmentSEXP);
-    Rcpp::traits::input_parameter< const NumericMatrix& >::type D(DSEXP);
-    Rcpp::traits::input_parameter< int >::type B(BSEXP);
-    Rcpp::traits::input_parameter< int >::type min_group_size(min_group_sizeSEXP);
-    Rcpp::traits::input_parameter< std::string >::type prior(priorSEXP);
-    Rcpp::traits::input_parameter< const CharacterVector& >::type labels(labelsSEXP);
-    Rcpp::traits::input_parameter< bool >::type display_progress(display_progressSEXP);
-    Rcpp::traits::input_parameter< double >::type omega(omegaSEXP);
-    Rcpp::traits::input_parameter< double >::type omega0(omega0SEXP);
-    rcpp_result_gen = Rcpp::wrap(identify_outliers(assignment, D, B, min_group_size, prior, labels, display_progress, omega, omega0));
-    return rcpp_result_gen;
-END_RCPP
-}
-// test
-arma::mat test(const arma::vec& vec1);
-RcppExport SEXP _classCleaner_test(SEXP vec1SEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::vec& >::type vec1(vec1SEXP);
-    rcpp_result_gen = Rcpp::wrap(test(vec1));
-    return rcpp_result_gen;
-END_RCPP
-}
 // psi
 NumericVector psi(const NumericVector& x, const NumericVector& y);
 RcppExport SEXP _classCleaner_psi(SEXP xSEXP, SEXP ySEXP) {
@@ -164,13 +49,6 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_classCleaner_bayesian_prob", (DL_FUNC) &_classCleaner_bayesian_prob, 7},
-    {"_classCleaner_empirical_prob", (DL_FUNC) &_classCleaner_empirical_prob, 3},
-    {"_classCleaner_get_estimated_prob", (DL_FUNC) &_classCleaner_get_estimated_prob, 10},
-    {"_classCleaner_get_observed_means", (DL_FUNC) &_classCleaner_get_observed_means, 5},
-    {"_classCleaner_get_simulated_means", (DL_FUNC) &_classCleaner_get_simulated_means, 10},
-    {"_classCleaner_identify_outliers", (DL_FUNC) &_classCleaner_identify_outliers, 9},
-    {"_classCleaner_test", (DL_FUNC) &_classCleaner_test, 1},
     {"_classCleaner_psi", (DL_FUNC) &_classCleaner_psi, 2},
     {"_classCleaner_sim_by_class", (DL_FUNC) &_classCleaner_sim_by_class, 5},
     {"_classCleaner_sim_by_instance", (DL_FUNC) &_classCleaner_sim_by_instance, 4},
