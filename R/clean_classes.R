@@ -74,15 +74,15 @@ clean_classes <- function(D, assignment, classes = 'all', alpha0 = 0.05, beta0 =
       index  = which(assignment == k)
     )
     Zi_psi <- within(Zi_psi[order(Zi_psi$Zi),], {
-      ca <- stats::qbinom(alpha, Nk[k] - 1, psi_t['tau'])
-      cb <- stats::qbinom(alpha, Nk[k] - 1, 1 - psi_t['tau'], lower.tail = FALSE) 
+      a <- stats::qbinom(alpha, Nk[k] - 1, psi_t['tau'])
+      b <- stats::qbinom(alpha, Nk[k] - 1, 1 - psi_t['tau'], lower.tail = FALSE) 
       q <- 1 - stats::pbinom(Zi, Nk[k] - 1, 1 - psi_t['tau'])
-      q_BH <- stats::p.adjust(q, method = 'BH')
+      # q_BH <- stats::p.adjust(q, method = 'BH')
       q_BY <- stats::p.adjust(q, method = 'BY')
-      q_Bon <- stats::p.adjust(q, method = 'bonferroni')
+      # q_Bon <- stats::p.adjust(q, method = 'bonferroni')
 
       p <- stats::pbinom(Zi, Nk[k] - 1, psi_t['tau'])
-      p_BH <- stats::p.adjust(p, method = 'BH')
+      # p_BH <- stats::p.adjust(p, method = 'BH')
       p_BY <- stats::p.adjust(p, method = 'BY')
       p_Bon <- stats::p.adjust(p, method = 'bonferroni')
 
