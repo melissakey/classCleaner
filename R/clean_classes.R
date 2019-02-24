@@ -74,7 +74,7 @@ clean_classes <- function(D, assignment, classes = 'all', alpha0 = 0.05, beta0 =
       index  = which(assignment == k)
     )
     Zi_psi <- within(Zi_psi[order(Zi_psi$Zi),], {
-      a <- stats::qbinom(alpha, Nk[k] - 1, psi_t['tau'])
+      a <- stats::qbinom(alpha, Nk[k] - 1, psi_t['tau']) - 1
       tau_hat <- Zi / Nk[k]
       tau_tilde <- (psi_t['tau'] + tau_hat) / 2
       a_tide <- stats::qbinom(alpha, Nk[k] - 1, tau_tilde)
