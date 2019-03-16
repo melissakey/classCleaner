@@ -55,7 +55,7 @@ clean_classes <- function(D, assignment, classes = 'all', alpha0 = 0.05, beta0 =
     } else labels <- rownames(D)
   }
   
-  result <- lapply(names(Nk)[Nk > 1], function(k){
+  result <- lapply(names(Nk)[Nk > 10], function(k){
    
     D11 <- D[which(assignment == k), which(assignment == k)]
     D21 <- D[which(assignment == k), which(assignment != k)]
