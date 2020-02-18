@@ -5,8 +5,16 @@
 \title{Generate data
 A convience wrapper around simulate_clustered_data for generating clustered data sets}
 \usage{
-generate_data(Nk, p_mismatch, p_garbage, K_proteome, n, s = 1, tau = 1,
-  rho = 0)
+generate_data(
+  Nk,
+  p_mismatch,
+  p_garbage,
+  K_proteome,
+  n,
+  s = 1,
+  tau = 1,
+  rho = 0
+)
 }
 \arguments{
 \item{Nk}{The number of instances in each class (can be a table)}

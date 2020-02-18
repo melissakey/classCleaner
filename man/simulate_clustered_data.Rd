@@ -4,9 +4,14 @@
 \alias{simulate_clustered_data}
 \title{Simulate clustered data using the normal distribution.}
 \usage{
-simulate_clustered_data(n = 100, Nk = c(40, 200), s = c(1, 1),
-  rho = matrix(c(0.6, 0.1, 0.1, 0.25), nrow = 2, ncol = 2), tau = 1,
-  method = c("by-class", "by-instance"))
+simulate_clustered_data(
+  n = 100,
+  Nk = c(40, 200),
+  s = c(1, 1),
+  rho = matrix(c(0.6, 0.1, 0.1, 0.25), nrow = 2, ncol = 2),
+  tau = 1,
+  method = c("by-class", "by-instance")
+)
 }
 \arguments{
 \item{n}{The total number of observations per instance.}
