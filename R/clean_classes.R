@@ -17,7 +17,7 @@
 #' @export
 
 
-classCleaner <- function(D, assignment, classes = "all", alpha0 = 0.05, beta0 = 0.05, labels = NULL, display_progress = FALSE, min_count = 20) {
+classCleaner <- function(D, assignment, classes = "all", alpha0 = 0.05, q = 0.5, labels = NULL, display_progress = FALSE) {
   
   # Check to make sure distance matrix is a symmetric, non-negative definite matrix and we have an assignment for each entry.
   if(!(is.matrix(D) && isSymmetric(D) && is.numeric(D))) stop("D must be a symmetric matrix with numeric entries")
@@ -58,42 +58,56 @@ classCleaner <- function(D, assignment, classes = "all", alpha0 = 0.05, beta0 = 
       else labels <- colnames(D)
     } else labels <- rownames(D)
   }
+  N <- sort(unique(Nk))
+  N <- N[N > 1]
+  # D.index <- outer(as.numeric(factor(assignment)), as.numeric(factor(assignment)), "<")
+
+  df <- data.frame(
+    N = N,
+    gamma = vapply(N, function(n) find_p(n - 1, q, alpha = alpha0 / n), 0)
+  )
+  # df$tu <- quantile(D[D.index], df$gamma)
   
-  result <- lapply(names(Nk)[Nk > min_count], function(k){
-   
+  result <- lapply(names(Nk)[Nk > 1], function(k){
+    # browser()
+    
+    ind <- df$N == Nk[k]
+    
     D11 <- D[which(assignment == k), which(assignment == k)]
-    D21 <- D[which(assignment == k), which(assignment != k)]
+    D21 <- D[which(assignment != k), which(assignment == k)]
     
     alpha <- alpha0 / Nk[k]
-
-
+    
+    
     psi_t <- psi(D11[lower.tri(D11)], D21)
-
+    
     Zi_psi <- data.frame(
       Zi = vapply(1:Nk[k], function(i) sum(D11[-i,i] < psi_t["t"]), 0),
       instance = labels[assignment == k],
       index  = which(assignment == k)
     )
-    Zi_psi <- within(Zi_psi[order(Zi_psi$Zi),], {
-      a <- stats::qbinom(alpha, Nk[k] - 1, psi_t["tau"]) - 1
-      tau_hat <- Zi / Nk[k]
-      tau_tilde <- (psi_t["tau"] + tau_hat) / 2
-      a_tide <- stats::qbinom(alpha, Nk[k] - 1, tau_tilde)
-      q <- 1 - stats::pbinom(Zi, Nk[k] - 1, 1 - psi_t["tau"])
-      q_BY <- stats::p.adjust(q, method = "BY")
 
-      p <- stats::pbinom(Zi, Nk[k] - 1, psi_t["tau"])
-      p_tilde <- stats::pbinom(Zi, Nk[k] - 1, tau_tilde)
-      p_BY <- stats::p.adjust(p, method = "BY")
-      pt_BY <- stats::p.adjust(p, method = "BY")
-      p_Bon <- stats::p.adjust(p, method = "bonferroni")
-      pt_Bon <- stats::p.adjust(p, method = "bonferroni")
-
-      t <- psi_t["t"]
-      tau <- psi_t["tau"]
-      alpha0 <- alpha0
-      Nk <-  as.numeric(Nk[k])
-      k <- factor(k)
+    Zi_psi <- within(Zi_psi, {
+        tu = vapply(1:Nk[k], function(i) {
+          quantile(D[, which(assignment == k)[i]], df$gamma[ind])
+        }, 0)
+        gamma = df$gamma[ind]
+        Ui <- vapply(1:Nk[k], function(i) sum(D11[-i, i] < tu[i]), 0)
+        c <- (Nk[k] - 1) * q
+        pU <- stats::pbinom(Ui - 1 , Nk[k] - 1, gamma, lower.tail = FALSE)
+        pU_bon <- p.adjust(pU, method = 'bonferroni')
+        
+        a <- stats::qbinom(alpha, Nk[k] - 1, psi_t["tau"]) - 1
+        tau_hat <- Zi / Nk[k]
+        
+        p <- stats::pbinom(Zi, Nk[k] - 1, psi_t["tau"])
+        p_Bon <- stats::p.adjust(p, method = "bonferroni")
+        
+        t <- psi_t["t"]
+        tau <- psi_t["tau"]
+        alpha0 <- alpha0
+        Nk <-  as.numeric(Nk[k])
+        k <- factor(k)
     })
   })
   result <- do.call("rbind", result)

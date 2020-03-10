@@ -10,10 +10,9 @@ classCleaner(
   assignment,
   classes = "all",
   alpha0 = 0.05,
-  beta0 = 0.05,
+  q = 0.5,
   labels = NULL,
-  display_progress = FALSE,
-  min_count = 20
+  display_progress = FALSE
 )
 }
 \arguments{
@@ -25,13 +24,13 @@ classCleaner(
 
 \item{alpha0}{desired overall, FWER-style type I error rate}
 
-\item{beta0}{desired overall FNR-style type II error rate}
-
 \item{labels}{a vector of labels for each instance.  Must be the same length as D.  If NULL, the algorithm will check for rownames and column names in D.  If none are found, the instances will be labeled with numbers 1:nrow(D).}
 
 \item{display_progress}{future progress bar (not used yet)}
 
 \item{tau}{cutoff for F distribution (using F-distribution only)}
+
+\item{beta0}{desired overall FNR-style type II error rate}
 }
 \description{
 Test whether each instance in a class actually belongs.
