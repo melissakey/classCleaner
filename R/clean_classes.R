@@ -4,10 +4,8 @@
 #' @param D A distance matrix containing the pairwise dissimilarity scores between instances
 #' @param assignment The assigned group of each instance
 #' @param classes The subset of classes on which filtering is performed, or "all" if all classes should be analyzed.
-#' @param labels identifier for each instance.  If NULL, the row/column names or indices of D are used
-#' @param tau cutoff for F distribution (using F-distribution only)
-#' @param alpha0 desired overall, FWER-style type I error rate
-#' @param beta0 desired overall FNR-style type II error rate 
+#' @param alpha0 Desired global type I (v1)  or type II (v2) error rate.
+#' @param q (v2 only) - the proportion of distances expected to be "close enough" to keep an instance.  Defaults to 0.5.
 #' @param labels a vector of labels for each instance.  Must be the same length as D.  If NULL, the algorithm will check for rownames and column names in D.  If none are found, the instances will be labeled with numbers 1:nrow(D).
 #' @param display_progress future progress bar (not used yet)
 #' 
