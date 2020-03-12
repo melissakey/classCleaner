@@ -12,7 +12,7 @@ classCleaner(
   alpha0 = 0.05,
   q = 0.5,
   labels = NULL,
-  display_progress = FALSE
+  exclude_classes = NULL
 )
 }
 \arguments{
@@ -22,15 +22,13 @@ classCleaner(
 
 \item{classes}{The subset of classes on which filtering is performed, or "all" if all classes should be analyzed.}
 
-\item{alpha0}{desired overall, FWER-style type I error rate}
+\item{alpha0}{Desired global type I (v1)  or type II (v2) error rate.}
+
+\item{q}{(v2 only) - the proportion of distances expected to be "close enough" to keep an instance.  Defaults to 0.5.}
 
 \item{labels}{a vector of labels for each instance.  Must be the same length as D.  If NULL, the algorithm will check for rownames and column names in D.  If none are found, the instances will be labeled with numbers 1:nrow(D).}
 
-\item{display_progress}{future progress bar (not used yet)}
-
-\item{tau}{cutoff for F distribution (using F-distribution only)}
-
-\item{beta0}{desired overall FNR-style type II error rate}
+\item{exclude_classes}{names of "mega" classes which should not be included in determining whether or not classCleaner2 is appropriate.  By default, these classes will not be included in the analysis.}
 }
 \description{
 Test whether each instance in a class actually belongs.

@@ -1,0 +1,91 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+
+options(tidyverse.quiet = TRUE)
+```
+
+# classCleaner
+
+<!-- badges: start -->
+[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
+<!-- badges: end -->
+
+The goal of classCleaner is to ...
+
+## Installation
+
+<!-- You can install the released version of classCleaner from [CRAN](https://CRAN.R-project.org) with: -->
+
+<!-- ``` r -->
+<!-- install.packages("classCleaner") -->
+<!-- ``` -->
+`classCleaner` is currently only available on [Github](https://github.com/), where it can be downloaded at
+<!-- And the development version from [GitHub](https://github.com/) with: -->
+
+``` r
+# install.packages("devtools")
+devtools::install_github("melkey/classCleaner")
+```
+## Example
+
+Here's a simple example of `classCleaner` on the Congressional Voting Records Data Set from the UCI Machine Learning Repository.
+Although `classCleaner` does not require any tidyverse package, it's included to clean and present the data.
+
+The data consists of (simplified) voting records for each member of the US House of Representatives on 16 key votes (identified by the CQA) in 1984.
+Each Representative's vote is summarized as "y" (voted for), "n" (voted against), and "?" (voted present or did not vote).
+We use `classCleaner` to identify which party members tended to vote in a manner different from their political party.
+
+```{r load-data}
+library(classCleaner)
+library(tidyverse)
+
+## load example data set
+
+votes <- read_csv(
+  "https://archive.ics.uci.edu/ml/machine-learning-databases/voting-records/house-votes-84.data",
+  col_types = cols(),
+  col_names = c('party', paste0("v", 1:16))
+) %>%
+  print()
+
+```
+
+`ClassCleaner`, requires a matrix of pairwise distances between the Representatives.
+To do this, we recode the `v1` - `v16`, with `y -> 1`, `n -> 0`, and `? -> 0.5`, and use Manhattan ("city-block") distance to calculate the distance between Representatives.
+
+```{r recode-vars, warning=FALSE}
+votes <- votes %>%
+  mutate_at(vars(v1:v16), 
+    ~ recode(., 
+      'y' = 1,
+      'n' = 0,
+      '?' = .5
+    )
+  ) %>%
+  print()
+
+dist_mat <- votes %>% 
+  as.data.frame(select(., -1)) %>%
+  as.matrix() %>%
+  dist(method = "manhattan") %>%
+  as.matrix()
+```
+
+Running classCleaner on this produces
+```{r classCleaner}
+cc_result <- classCleaner(dist_mat, votes$party)
+
+print(cc_result)
+```
