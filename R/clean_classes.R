@@ -25,65 +25,7 @@ classCleaner <- function(D, assignment, classes = "all", alpha0 = 0.05, q = 0.5,
     warning("Multiple values of alpha0 found.  Only the first is used.")
     alpha0 <- alpha0[1]
   }
-  
-  class_table <- table(assignment)
-  
-  if(!identical(classes,"all")) {
-    Nk <- tryCatch({
-      Nk.tmp <- class_table[names(class_table) %in% classes]
-    },
-      error = function(cond){
-        message("An error ocurred in selecting which classes to filter.")
-        # message("Here's the original error message:")
-        message(cond)
-      },
-      warning = function(cond){
-        message("A problem ocurred in selecting which classes to filter.")
-        # message("Here's the original warning message:")
-        message(cond)
-      })
-    ignored_classes <- as.data.frame(class_table[!(names(class_table) %in% classes) | class_table < Nk])
-    names(ignored_classes) <- c("class", "no_instances")
-    ignored_classes <- within(ignored_classes, {
-      v1_no_removed <- NA
-      tau <- NA
-      t <- NA
-      a <- NA
-      v1_status <- 'ignored'
-    })
-  }
-  else {
-    Nk <- class_table
-    ignored_classes <- data.frame()
-  }
-  
-  # class_summary <- as.data.frame(class_table)
-  # names(class_summary) <- c('class', 'no_instances')
-  # within(class_summary, {
-  #   v1_status <- ifelse()
-  # })
-  
-  # remove excluded classes from the list of considered classes
-  # save counts for future reporting
-  if(!is.null(exclude_classes)) {
-    excluded_classes <- as.data.frame(Nk[(names(Nk) %in% exclude_classes)])
-    names(excluded_classes) <- c("class", "no_instances")
-    excluded_classes <- within(excluded_classes, {
-      
-      v1_no_removed <- NA
-      tau <- NA
-      t <- NA
-      a <- NA
-      v1_status = 'excluded'
-    })
-    Nk <- Nk[!(names(Nk) %in% exclude_classes)]
-  } else   excluded_classes <- data.frame() # empty frame to define variable
 
-  
-  # Determine which version(s) of classCleaner are appropriate for the data set
-  # v2 is only appropriate if the number of instances in the largest (non-excluded) class is small.
-  v2 <- max(Nk / sum(class_table)) < .1
-  
   # handle labels
   if(is.null(labels)){
     if(is.null(rownames(D))){
@@ -91,119 +33,129 @@ classCleaner <- function(D, assignment, classes = "all", alpha0 = 0.05, q = 0.5,
       else labels <- colnames(D)
     } else labels <- rownames(D)
   }
+    
+  class_table <- table(assignment)
   
+  if(identical(classes, "all")) {
+    classes <- names(class_table)
+  }
+  else {
+    unavailable_classes <- setdiff(classes, names(class_table))
+    if(length(unavailable_classes) > 0) stop({cat("Some reported classes not found.\n"); print(unavailable_classes )})
+  }
+  
+  class_summary <- as.data.frame(class_table, row.names = names(class_table))
+  names(class_summary) <- c('class', 'no_instances')
+
+  class_summary <- within(class_summary, {
+    v1_status <- lest::case_when(
+      class %in% exclude_classes ~ 'excluded',
+      class %in% classes & no_instances >= 20 ~ 'analyzed',
+      TRUE ~ 'ignored'
+    )
+    v1_no_removed <- NA
+    tau <- NA
+    t_star <- NA
+    a <- NA   
+  })
+  
+  # Determine which version(s) of classCleaner are appropriate for the data set
+  # v2 is only appropriate if the number of instances in the largest (non-excluded) class is small.
+  v2 <- with(class_summary, max(no_instances[v1_status != 'excluded'] / sum(no_instances)) < .1)
+
+ 
   # If v2 is appropriate, calculate gamma once for each values of N in the data set.
   if(v2) {
-    N <- sort(unique(Nk))
-    N <- N[N > 1]
+    class_summary <- within(class_summary, {
+      v2_status <- lest::case_when(
+        class %in% exclude_classes ~ 'excluded',
+        class %in% classes & no_instances > 1 ~ 'analyzed',
+        TRUE ~ 'ignored'
+      )
+      v2_no_removed <- NA
+      c <- NA
+      gamma <- NA
+    })
+    
+    N <- with(class_summary, sort(unique(no_instances[v2_status == 'analyzed'])))
     df <- data.frame(
       N = N,
       gamma = vapply(N, function(n) find_p(n - 1, q, alpha = alpha0 / n), 0)
     )
-    excluded_classes <- within(excluded_classes, {
-      
-      v2_no_removed <- NA
-      c <- NA
-      gamma <- NA
-      v2_status <- 'excluded'
-    })
-    ignored_classes <- within(ignored_classes, {
-      
-      v2_no_removed <- NA
-      c <- NA
-      gamma <- NA
-      v2_status <- 'ignored'
-    })
+    
   }
+  analyze_list <- with(class_summary, levels(class[v1_status == "analyzed" | (v2 && v2_status == "analyzed")]))
   
-  min_count <- c(20, 2)[v2 + 1]
-  result_list <- lapply(names(Nk)[Nk >= min_count], function(k){
+  
+  result_list <- lapply(analyze_list, function(k){
+    Nk <- with(class_summary, no_instances[class == k])
+    alpha <- alpha0 / Nk
+    
+    D11 <- D[which(assignment == k), which(assignment == k)]    
+    
+    # indexing
+    instance = labels[assignment == k]
+    index  = which(assignment == k)
+    
+    # v1
+    if(class_summary[k, "v1_status"] == 'analyzed') {
+      D21 <- D[which(assignment != k), which(assignment == k)]
+      
+      psi_t <- psi(D11[lower.tri(D11)], D21)
+      Zi = vapply(1:Nk, function(i) sum(D11[-i,i] < psi_t["t"]), 0)
+      p1 <- stats::pbinom(Zi, Nk - 1, psi_t["tau"])
+      p1_bon <- stats::p.adjust(p1, method = "bonferroni")
+      
+      
+      class_summary[k, 'a'] <<- stats::qbinom(alpha, Nk - 1, psi_t["tau"]) - 1
+      class_summary[k, 't_star'] <<- psi_t['t']
+      class_summary[k, 'tau'] <<- psi_t['tau']
+      class_summary[k, 'v1_no_removed'] <<- sum(p1_bon < 0.05)
+      
+      v1_result <- data.frame(
+        class = k,
+        instance = instance,
+        Zi = Zi,
+        p = p1,
+        p_bonferroni = p1_bon,
+        keep = ifelse(p1_bon < 0.05, "remove", "keep")
+      )
+    } else v1_result <- data.frame()
 
-    D11 <- D[which(assignment == k), which(assignment == k)]
-    D21 <- D[which(assignment != k), which(assignment == k)]
-    
-    alpha <- alpha0 / Nk[k]
-    
-    
-    psi_t <- psi(D11[lower.tri(D11)], D21)
-    
-    protein_result <- list(
-      Zi = vapply(1:Nk[k], function(i) sum(D11[-i,i] < psi_t["t"]), 0),
-      instance = labels[assignment == k],
-      index  = which(assignment == k)
-    )
-    
-    
-    protein_result <- within(protein_result, {
-      if(v2) {
-        ind <- df$N == Nk[k]
-        tu = vapply(1:Nk[k], function(i) {
-          quantile(D[, which(assignment == k)[i]], df$gamma[ind])
-        }, 0)
-        gamma = df$gamma[ind]
-        Ui <- vapply(1:Nk[k], function(i) sum(D11[-i, i] < tu[i]), 0)
-        c <- (Nk[k] - 1) * q
-        pU <- stats::pbinom(Ui - 1 , Nk[k] - 1, gamma, lower.tail = FALSE)
-        pU_bon <- p.adjust(pU, method = 'bonferroni')        
-      }
-      a <- stats::qbinom(alpha, Nk[k] - 1, psi_t["tau"]) - 1
-      tau_hat <- Zi / Nk[k]
+    # v2
+    if(v2 && class_summary[k, "v2_status"] == 'analyzed') {
+      ind <- df$N == Nk
       
-      p <- stats::pbinom(Zi, Nk[k] - 1, psi_t["tau"])
-      p_Bon <- stats::p.adjust(p, method = "bonferroni")
+      t_star_star = vapply(index, function(i) {quantile(D[, i], df$gamma[ind])}, 0)
+      Ui <- vapply(1:Nk, function(i) sum(D11[-i, i] < t_star_star[i]), 0)
       
-      t <- psi_t["t"]
-      tau <- psi_t["tau"]
-      alpha0 <- alpha0
-      Nk <-  as.numeric(Nk[k])
-    })
+      p2 <- stats::pbinom(Ui - 1 , Nk - 1,  df$gamma[ind], lower.tail = FALSE)
+      p2_bon <- p.adjust(p2, method = 'bonferroni')
+      
+      class_summary[k, 'c'] <<- (Nk - 1) * q
+      class_summary[k, 'gamma'] <<-  df$gamma[ind]
+      class_summary[k, 'v2_no_removed'] <<- sum(p2_bon >= 0.05)
+      
+      v2_result <- data.frame(
+        class = k,
+        Ui = Ui,
+        t_star2 = t_star_star,
+        p = p2_bon,
+        keep = ifelse(p2_bon < 0.05, "keep", "remove")
+      )
+      
+    } else v2_result <- data.frame()
     
-    
-    v1_summary <- with(protein_result, data.frame(
-      class = k,
-      v1_status = 'analyzed',
-      no_instances = Nk,
-      v1_no_removed = sum(p_Bon < 0.05),
-      tau = tau,
-      t = t,
-      a = a
-    ))
-    rownames(v1_summary) <- NULL
-    
-    v1_result <- with(protein_result, data.frame(
-      class = k,
-      instance = instance,
-      Zi = Zi,
-      p = p,
-      p_bonferroni = p_Bon,
-      keep = ifelse(p_Bon < 0.05, "remove", "keep")
-    ))
-    
-    if(!v2) return(list(class_summary = v1_summary, v1 = v1_result))
-    v2_summary <- with(protein_result, data.frame(
-      v2_no_removed = sum(pU_bon >= 0.05),
-      c = c,
-      gamma = gamma
-    ))
-  
-    v2_result <- with(protein_result, data.frame(
-      class = k,
-      Ui = Ui,
-      t = tu,
-      p = pU_bon,
-      keep = ifelse(pU_bon < 0.05, "keep", "remove")
-    ))
-    list(class_summary = rbind(v1_summary, v2_summary), v1 = v1_result, v2 = v2_result, )
+    list(v1 = v1_result, v2 = v2_result)
   })
   
+
   result <- list(
-    class_summary = rbind(do.call("rbind", lapply(result_list, function(x) {x$class_summary})), ignored_classes, excluded_classes),
-    v1_result = do.call("rbind", lapply(result_list, function(x) {x$v1}))
+    class_summary = class_summary,
+    v1_result = do.call("rbind", lapply(result_list, function(x) {x$v1})),
+    v2_result = do.call("rbind", lapply(result_list, function(x) {x$v2}))
   )
-  if(!is.null(result_list[[1]]$v2)) {
-    result$v2_result <- do.call("rbind", lapply(result_list, function(x) {x$v2}))
-  }
-  
+
   class(result) <- 'classcleaner'
   result
 }
