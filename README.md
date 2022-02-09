@@ -47,9 +47,6 @@ manner different from their political party.
 ``` r
 library(classCleaner)
 library(tidyverse)
-#> Warning: package 'tidyr' was built under R version 3.6.3
-#> Warning: package 'dplyr' was built under R version 3.6.3
-#> Warning: package 'forcats' was built under R version 3.6.3
 
 ## load example data set
 
@@ -120,9 +117,8 @@ Running classCleaner on this produces
 cc_result <- classCleaner(dist_mat, votes$party)
 
 print(cc_result)
-#> classCleaner was applied to 2 classes
+#> classCleaner was applied to 2 of 2 classes
 #> A total of 362 instances were retained out of 435 
-#> 
 #>            # Instances # Retained    %
 #> democrat           267        217 81.3
 #> republican         168        145 86.3

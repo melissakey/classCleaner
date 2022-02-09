@@ -19,6 +19,8 @@ classCleaner <- function(D, assignment, classes = "all", alpha0 = 0.05, q = 0.5,
   
   # Check to make sure distance matrix is a symmetric, non-negative definite matrix and we have an assignment for each entry.
   if(!(is.matrix(D) && isSymmetric(D) && is.numeric(D))) stop("D must be a symmetric matrix with numeric entries")
+  
+  # Check to make sure the length of the assignment vector matches the dimensions of the distance matrix.
   if(length(assignment) != nrow(D)) stop("length(asssignment) != nrow(D)")
   if(min(D, na.rm = TRUE) < 0) stop("D should be a distance matrix with entries >= 0.")
   if(length(alpha0) != 1) {
@@ -26,7 +28,12 @@ classCleaner <- function(D, assignment, classes = "all", alpha0 = 0.05, q = 0.5,
     alpha0 <- alpha0[1]
   }
 
-  # handle labels
+  # assign labels to each entry, if provided
+  if(!is.null(labels) & length(labels) != nrow(D)) {
+    message("Size of label vector must match dimensions of D.  Reverting to current row/column names in D or numeric values.")
+    labels <- NULL
+  }
+  
   if(is.null(labels)){
     if(is.null(rownames(D))){
       if(is.null(colnames(D))) labels <- 1:ncol(D)
@@ -41,14 +48,14 @@ classCleaner <- function(D, assignment, classes = "all", alpha0 = 0.05, q = 0.5,
   }
   else {
     unavailable_classes <- setdiff(classes, names(class_table))
-    if(length(unavailable_classes) > 0) stop({cat("Some reported classes not found.\n"); print(unavailable_classes )})
+    if(length(unavailable_classes) > 0) stop(cat("Not all classes to filter are found in assignment list.\n"))
   }
   
   class_summary <- as.data.frame(class_table, row.names = names(class_table))
   names(class_summary) <- c('class', 'no_instances')
 
   class_summary <- within(class_summary, {
-    v1_status <- lest::case_when(
+    status <- lest::case_when(
       class %in% exclude_classes ~ 'excluded',
       class %in% classes & no_instances >= 20 ~ 'analyzed',
       TRUE ~ 'ignored'
@@ -61,33 +68,33 @@ classCleaner <- function(D, assignment, classes = "all", alpha0 = 0.05, q = 0.5,
   
   # Determine which version(s) of classCleaner are appropriate for the data set
   # v2 is only appropriate if the number of instances in the largest (non-excluded) class is small.
-  v2 <- with(class_summary, max(no_instances[v1_status != 'excluded'] / sum(no_instances)) < .1)
+  # v2 <- with(class_summary, max(no_instances[v1_status != 'excluded'] / sum(no_instances)) < .1)
 
  
   # If v2 is appropriate, calculate gamma once for each values of N in the data set.
-  if(v2) {
-    class_summary <- within(class_summary, {
-      v2_status <- lest::case_when(
-        class %in% exclude_classes ~ 'excluded',
-        class %in% classes & no_instances > 1 ~ 'analyzed',
-        TRUE ~ 'ignored'
-      )
-      v2_no_removed <- NA
-      c <- NA
-      gamma <- NA
-    })
-    
-    N <- with(class_summary, sort(unique(no_instances[v2_status == 'analyzed'])))
-    df <- data.frame(
-      N = N,
-      gamma = vapply(N, function(n) find_p(n - 1, q, alpha = alpha0 / n), 0)
-    )
-    
-  }
-  analyze_list <- with(class_summary, levels(class[v1_status == "analyzed" | (v2 && v2_status == "analyzed")]))
+  # if(v2) {
+  #   class_summary <- within(class_summary, {
+  #     v2_status <- lest::case_when(
+  #       class %in% exclude_classes ~ 'excluded',
+  #       class %in% classes & no_instances > 1 ~ 'analyzed',
+  #       TRUE ~ 'ignored'
+  #     )
+  #     v2_no_removed <- NA
+  #     c <- NA
+  #     gamma <- NA
+  #   })
+  #   
+  #   N <- with(class_summary, sort(unique(no_instances[v2_status == 'analyzed'])))
+  #   df <- data.frame(
+  #     N = N,
+  #     gamma = vapply(N, function(n) find_p(n - 1, q, alpha = alpha0 / n), 0)
+  #   )
+  #   
+  # }
+  # analyze_list <- with(class_summary, levels(class[v1_status == "analyzed" | (v2 && v2_status == "analyzed")]))
+  analyze_list <- with(class_summary, levels(class[status == 'analyzed']))
   
-  
-  result_list <- lapply(analyze_list, function(k){
+  result_list <- lapply(analyze_list, function(k) {
     Nk <- with(class_summary, no_instances[class == k])
     alpha <- alpha0 / Nk
     
@@ -98,7 +105,7 @@ classCleaner <- function(D, assignment, classes = "all", alpha0 = 0.05, q = 0.5,
     index  = which(assignment == k)
     
     # v1
-    if(class_summary[k, "v1_status"] == 'analyzed') {
+    if(class_summary[k, "status"] == 'analyzed') {
       D21 <- D[which(assignment != k), which(assignment == k)]
       
       psi_t <- psi(D11[lower.tri(D11)], D21)
@@ -118,42 +125,46 @@ classCleaner <- function(D, assignment, classes = "all", alpha0 = 0.05, q = 0.5,
         Zi = Zi,
         p = p1,
         p_bonferroni = p1_bon,
-        keep = ifelse(p1_bon < 0.05, "remove", "keep")
+        keep = p1_bon >= 0.05
       )
     } else v1_result <- data.frame()
 
     # v2
-    if(v2 && class_summary[k, "v2_status"] == 'analyzed') {
-      ind <- df$N == Nk
-      
-      t_star_star = vapply(index, function(i) {quantile(D[, i], df$gamma[ind])}, 0)
-      Ui <- vapply(1:Nk, function(i) sum(D11[-i, i] < t_star_star[i]), 0)
-      
-      p2 <- stats::pbinom(Ui - 1 , Nk - 1,  df$gamma[ind], lower.tail = FALSE)
-      p2_bon <- p.adjust(p2, method = 'bonferroni')
-      
-      class_summary[k, 'c'] <<- (Nk - 1) * q
-      class_summary[k, 'gamma'] <<-  df$gamma[ind]
-      class_summary[k, 'v2_no_removed'] <<- sum(p2_bon >= 0.05)
-      
-      v2_result <- data.frame(
-        class = k,
-        Ui = Ui,
-        t_star2 = t_star_star,
-        p = p2_bon,
-        keep = ifelse(p2_bon < 0.05, "keep", "remove")
-      )
-      
-    } else v2_result <- data.frame()
+    # if(v2 && class_summary[k, "v2_status"] == 'analyzed') {
+    #   ind <- df$N == Nk
+    #   
+    #   t_star_star = vapply(index, function(i) {quantile(D[, i], df$gamma[ind])}, 0)
+    #   Ui <- vapply(1:Nk, function(i) sum(D11[-i, i] < t_star_star[i]), 0)
+    #   
+    #   p2 <- stats::pbinom(Ui - 1 , Nk - 1,  df$gamma[ind], lower.tail = FALSE)
+    #   p2_bon <- p.adjust(p2, method = 'bonferroni')
+    #   
+    #   class_summary[k, 'c'] <<- (Nk - 1) * q
+    #   class_summary[k, 'gamma'] <<-  df$gamma[ind]
+    #   class_summary[k, 'v2_no_removed'] <<- sum(p2_bon >= 0.05)
+    #   
+    #   v2_result <- data.frame(
+    #     class = k,
+    #     instance = instance,
+    #     Ui = Ui,
+    #     t_star2 = t_star_star,
+    #     p2 = p2,
+    #     p2_bonferroni = p2_bon,
+    #     keep = p2_bon < 0.05
+    #   )
+    #   
+    # } else v2_result <- data.frame()
+    # list(v1 = v1_result, v2 = v2_result)
     
-    list(v1 = v1_result, v2 = v2_result)
+    v1_result
   })
   
 
   result <- list(
     class_summary = class_summary,
-    v1_result = do.call("rbind", lapply(result_list, function(x) {x$v1})),
-    v2_result = do.call("rbind", lapply(result_list, function(x) {x$v2}))
+    result = do.call("rbind", result_list)
+    # v1_result = do.call("rbind", lapply(result_list, function(x) {x$v1})),
+    # v2_result = do.call("rbind", lapply(result_list, function(x) {x$v2}))
   )
 
   class(result) <- 'classcleaner'

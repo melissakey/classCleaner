@@ -88,4 +88,5 @@ Running classCleaner on this produces
 cc_result <- classCleaner(dist_mat, votes$party)
 
 print(cc_result)
+head(predict(cc_result))
 ```
